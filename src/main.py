@@ -58,8 +58,8 @@ def detect(opt):
         camera.config_gain_exposure(source, opt.gain, opt.exposure)
 
     apriltags = dets.AprilTagDetector(dets.C310_PARAMS, opt.tag_family, opt.tag_size)
-    # yolov5 = dets.YoloV5OpenCVDetector(opt.weights, backend='opencl')
-    yolov5 = dets.YoloV5TorchDetector(opt.weights)
+    yolov5 = dets.YoloV5OpenCVDetector(opt.weights)
+    # yolov5 = dets.YoloV5TorchDetector(opt.weights)
 
     min_hits = 1
     tracker = sort.Sort(

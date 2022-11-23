@@ -198,9 +198,11 @@ class YoloV5TorchDetector:
 
 # Uses OpenCV dnn for inference. The model must be exported
 # to ONNX for this backend.
-# Also, the additional inference backends must be enabled in OpenCV
+#
+# The additional inference backends must be enabled in OpenCV
 # at compile time. IIRC opencv-python build on PyPi does NOT enable
-# cuda, vulkan, or openvino.
+# cuda, vulkan, or openvino. When compiling OpenCV, it's worth trying
+# to include MKL as well, to improve the CPU backend performance.
 class YoloV5OpenCVDetector:
     def __init__(self, weights="yolov5s.onnx", classes=YOLOV5_CLASSES, backend="cpu"):
         self.classes = classes
@@ -212,7 +214,7 @@ class YoloV5OpenCVDetector:
         elif backend == "opencl":
             print("OpenCL will be used if it is available.")
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL_FP16)
+            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
         elif backend == "cuda":
             print("CUDA will be used if it is available.")
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
@@ -223,6 +225,10 @@ class YoloV5OpenCVDetector:
             print("Unknown backend, CPU backend will be used.")
 
         self.out_names = self.net.getUnconnectedOutLayersNames()
+        num_boxes = 25200
+        self.class_ids = np.empty(num_boxes)
+        self.confidences = np.empty(num_boxes)
+        self.boxes = np.empty((num_boxes, 4))
 
     def detect(self, img):
         img = self._resize_to_frame(img)
@@ -261,9 +267,6 @@ class YoloV5OpenCVDetector:
     def _process_net_out(self, tensor):
         # 25200 is the total number of anchorboxes in the model output.
         tns = np.array(tensor).reshape(25200, len(self.classes) + 5)
-        class_ids = np.empty(tns.shape[0])
-        confidences = np.empty(tns.shape[0])
-        boxes = np.empty((tns.shape[0], 4))
 
         count = 0
         for pred in tns[:]:
@@ -280,15 +283,20 @@ class YoloV5OpenCVDetector:
 
                 rect = np.array((left, top, w, h))
 
-                class_ids[count] = score_idx
-                confidences[count] = best_score * c
-                boxes[count] = rect
+                self.class_ids[count] = score_idx
+                self.confidences[count] = best_score * c
+                self.boxes[count] = rect
                 count += 1
 
         nms_res = cv2.dnn.NMSBoxes(
-            boxes[:count], confidences[:count], NMS_SCORE_THRESH, NMS_THRESH
+            self.boxes[:count], self.confidences[:count], NMS_SCORE_THRESH, NMS_THRESH
         )
-        return (nms_res, boxes[:count], confidences[:count], class_ids[:count])
+        return (
+            nms_res,
+            self.boxes[:count],
+            self.confidences[:count],
+            self.class_ids[:count],
+        )
 
     def _resize_to_frame(self, imraw):
         major_dim = np.max(imraw.shape)
