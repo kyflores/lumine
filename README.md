@@ -1,6 +1,17 @@
 # lumine
 Prototype multi object detector and tracker suite for FRC
 
+## Install
+Preferably in a virtualenv...
+```
+pip install -r requirements.txt
+```
+And get `v4l2-ctl` from your package manager.
+
+This project is only tested on linux.
+`requirements.txt` is a mess right now, future work will try to pair down
+the dependencies needed.
+
 ## Common detection format
 All detectors should support a `detect(img)` function.
 
