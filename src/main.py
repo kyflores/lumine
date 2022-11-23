@@ -58,7 +58,8 @@ def detect(opt):
         camera.config_gain_exposure(source, opt.gain, opt.exposure)
 
     apriltags = dets.AprilTagDetector(dets.C310_PARAMS, opt.tag_family, opt.tag_size)
-    yolov5 = dets.YoloV5TorchDetector(opt.weights)
+    yolov5 = dets.YoloV5OpenCVDetector(opt.weights)
+    # yolov5 = dets.YoloV5TorchDetector(opt.weights)
 
     min_hits = 1
     tracker = sort.Sort(
@@ -100,9 +101,10 @@ def detect(opt):
 
         t_end = time.time()
 
-        os.system("cls" if os.name == "nt" else "clear")
-        print("{:.2f} iters/s".format(1 / (t_end - t_begin)))
-        print(dets.detections_as_table(all_dets))
+        if opt.table:
+            os.system("cls" if os.name == "nt" else "clear")
+            print("{:.2f} iters/s".format(1 / (t_end - t_begin)))
+            print(dets.detections_as_table(all_dets))
 
         if cv2.pollKey() > -1:
             cap.release()
@@ -147,6 +149,9 @@ def main():
         type=float,
         default="0.15",
         help="IOU threshold for SORT. Smaller can track faster movements but reduces accuracy",
+    )
+    parser.add_argument(
+        "--table", action="store_true", help="Print the detection table."
     )
 
     opt = parser.parse_args()
