@@ -5,9 +5,9 @@ import numpy as np
 
 CAM0 = '/dev/video3'
 CAM1 = '/dev/video5'
-BOARD_SHAPE=(6,8)
+BOARD_SHAPE=(8,6)
 SQUARE_SIZE=24 # mm
-NUM_FRAMES=5
+NUM_FRAMES=10
 
 CAL_FLAGS = (cv2.CALIB_ZERO_TANGENT_DIST |
          cv2.CALIB_FIX_K1 |

@@ -51,15 +51,25 @@ def detect(opt):
         print("Could not open source. Try change the device ID.")
         exit(1)
 
+    depth_cam = None
+    stereo=None
     if source_type == "webcam":
         # The first read turns the webcam "on", and it must be in this state
         # to apply v4l2-ctl property changes.
-        _, _ = cap.read()
+        _, fr = cap.read()
         camera.config_gain_exposure(source, opt.gain, opt.exposure)
 
+        # If the secondary camera is present, initialize it with the same parameters
+        if (opt.depth):
+            depth_cam = cv2.VideoCapture(int(opt.depth))
+            _, fr = depth_cam.read()
+            camera.config_gain_exposure(opt.depth, opt.gain, opt.exposure)
+            stereo = cv2.StereoSGBM_create(minDisparity=64, numDisparities=128, blockSize=15)
+
     apriltags = dets.AprilTagDetector(dets.C310_PARAMS, opt.tag_family, opt.tag_size)
-    yolov5 = dets.YoloV5OpenCVDetector(opt.weights)
-    # yolov5 = dets.YoloV5TorchDetector(opt.weights)
+
+    # yolov5 = dets.YoloV5OpenCVDetector(opt.weights)
+    yolov5 = dets.YoloV5TorchDetector(opt.weights)
 
     min_hits = 1
     tracker = sort.Sort(
@@ -68,12 +78,25 @@ def detect(opt):
 
     while True:
         t_begin = time.time()
-        err, frame = cap.read()
+        err = cap.grab()
+
+        derr=None
+        dframe=None
+        dframe_gray=None
+        if (opt.depth):
+            derr = depth_cam.grab()
+        err, frame = cap.retrieve()
+        if (opt.depth):
+            derr, dframe = depth_cam.retrieve()
+
         if not err:
             print("Media source didn't produce frame, stopping...")
             break
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        if (opt.depth):
+            dframe_gray = cv2.cvtColor(dframe, cv2.COLOR_BGR2GRAY)
 
         at_det = apriltags.detect(frame_gray)
         yolo_det = yolov5.detect(frame)
@@ -96,8 +119,16 @@ def detect(opt):
             map_to_sort_id(all_dets, trackers)  # Mutates the dictionary
 
         with_boxes = draw.draw(frame, all_dets)
-        # with_boxes = draw.draw_sort(frame, trackers)
-        cv2.imshow("detector", with_boxes)
+
+        disp_map = stereo.compute(frame_gray, dframe_gray)
+        # print(disp_map)
+        disp_map = (disp_map / 16).astype(np.uint8)
+        disp_map = cv2.cvtColor(disp_map, cv2.COLOR_GRAY2RGB)
+        # print(disp_map.min(), disp_map.max(), disp_map.mean())
+
+        both = cv2.hconcat((with_boxes, dframe, disp_map))
+
+        cv2.imshow("detector", both)
 
         t_end = time.time()
 
@@ -117,8 +148,14 @@ def main():
     parser.add_argument(
         "--source",
         type=str,
-        default=0,
+        default='0',
         help="Media source, anything supported by video capture",
+    )
+    parser.add_argument(
+        "--depth",
+        type=str,
+        default='1',
+        help="Secondary camera for depth estimation."
     )
     parser.add_argument(
         "--gain", type=int, default=150, help="Gain to configure with v4l2-ctl"

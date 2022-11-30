@@ -298,10 +298,10 @@ class YoloV5OpenCVDetector:
             self.class_ids[:count],
         )
 
-    def _resize_to_frame(self, imraw):
+    def _resize_to_frame(self, imraw, sz = 640):
         major_dim = np.max(imraw.shape)
-        scale = 640 / major_dim
+        scale = sz / major_dim
         imraw = cv2.resize(imraw, None, fx=scale, fy=scale)
-        img = np.zeros((640, 640, 3), dtype=imraw.dtype)
+        img = np.zeros((sz, sz, 3), dtype=imraw.dtype)
         img[: imraw.shape[0], : imraw.shape[1], :] = imraw
         return img

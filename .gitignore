@@ -131,3 +131,6 @@ dmypy.json
 # Torch weights
 *.pt
 *.onnx
+
+# Pickle objects
+*.pkl
