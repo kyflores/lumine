@@ -9,7 +9,9 @@ import cv2
 
 import subprojects.sort.sort as sort
 
-import detectors as dets
+import common
+from detectors import apriltags as atg
+from detectors import yolov5 as yolo
 import draw
 import camera
 
@@ -57,9 +59,9 @@ def detect(opt):
         _, _ = cap.read()
         camera.config_gain_exposure(source, opt.gain, opt.exposure)
 
-    apriltags = dets.AprilTagDetector(dets.C310_PARAMS, opt.tag_family, opt.tag_size)
-    yolov5 = dets.YoloV5OpenCVDetector(opt.weights)
-    # yolov5 = dets.YoloV5TorchDetector(opt.weights)
+    apriltags = atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
+    # yolov5 = yolo.YoloV5OpenCVDetector(opt.weights)
+    yolov5 = yolo.YoloV5TorchDetector(opt.weights)
 
     min_hits = 1
     tracker = sort.Sort(
@@ -104,7 +106,7 @@ def detect(opt):
         if opt.table:
             os.system("cls" if os.name == "nt" else "clear")
             print("{:.2f} iters/s".format(1 / (t_end - t_begin)))
-            print(dets.detections_as_table(all_dets))
+            print(common.detections_as_table(all_dets))
 
         if cv2.pollKey() > -1:
             cap.release()
