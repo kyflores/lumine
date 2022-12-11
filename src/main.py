@@ -68,7 +68,6 @@ def detect(opt):
     while True:
         t_begin = time.time()
         err, frame = cap.read()
-        print(err, frame)
         if not err:
             print("Media source didn't produce frame, stopping...")
             break
