@@ -15,7 +15,6 @@ from detectors import yolov5 as yolo
 import draw
 import camera
 
-
 def map_to_sort_id(dets, trackers):
     xyxys = [torch.tensor(x["sort_xyxy"][:4]) for x in dets]
 
@@ -37,27 +36,25 @@ def map_to_sort_id(dets, trackers):
 
 def detect(opt):
     # See https://www.kurokesu.com/main/2020/05/22/uvc-camera-exposure-timing-in-opencv/
+    cap = None
     try:
         source = int(opt.source)
         source_type = "webcam"
         print("Configured webcam {} as source".format(source))
     except ValueError:
         source = str(opt.source)
+        cap = cv2.VideoCapture(source)
+        if not cap.isOpened():
+            print("Could not open source file")
+            exit(1)
         print("Configured file {} as source".format(source))
     except:
         print("Unknown error parsing source")
         exit(1)
 
-    cap = cv2.VideoCapture(source)
-    if not cap.isOpened():
-        print("Could not open source. Try change the device ID.")
-        exit(1)
 
     if source_type == "webcam":
-        # The first read turns the webcam "on", and it must be in this state
-        # to apply v4l2-ctl property changes.
-        _, _ = cap.read()
-        camera.config_gain_exposure(source, opt.gain, opt.exposure)
+        cap = camera.CameraCtl(source, (480, 640), 30)
 
     apriltags = atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     # yolov5 = yolo.YoloV5OpenCVDetector(opt.weights)
@@ -149,7 +146,7 @@ def main():
     parser.add_argument(
         "--iou_thresh",
         type=float,
-        default="0.15",
+        default=0.15,
         help="IOU threshold for SORT. Smaller can track faster movements but reduces accuracy",
     )
     parser.add_argument(
