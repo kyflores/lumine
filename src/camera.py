@@ -30,8 +30,11 @@ def config_camera(devnum, opt):
 
     subprocess.call(cmd_list)
 
+
 class CameraCtl:
-    def __init__(self, devnum, dimensions=(480,640), fps=30, gain=None, exposure=None, cal=None):
+    def __init__(
+        self, devnum, dimensions=(480, 640), fps=30, gain=None, exposure=None, cal=None
+    ):
         self.devnum = devnum
         self.shape = dimensions
         self.fps = fps
@@ -55,7 +58,6 @@ class CameraCtl:
         if (gain is not None) or (exposure is not None):
             config_gain_exposure(self.devnum, self.gain, self.exposure)
 
-
     def __del__(self):
         self.cap.release()
 
@@ -71,4 +73,3 @@ class CameraCtl:
         err, frame = self.cap.retrieve()
 
         return err, frame
-

@@ -233,3 +233,71 @@ class YoloV5OpenCVDetector:
         img = np.zeros((640, 640, 3), dtype=imraw.dtype)
         img[: imraw.shape[0], : imraw.shape[1], :] = imraw
         return img
+
+
+from openvino.runtime import Core, Layout, get_batch
+
+
+class YoloV5OpenVinoDetector:
+    def __init__(self, openvino_dir, classes, backend="CPU"):
+        model = None  # *.xml
+        weights = None  # *.bin
+        meta = None  # *.yaml
+
+        self.ie = Core()
+        self.network = self.ie.read_model(model=model, weights=weights)
+
+        if self.network.get_parameters()[0].get_layout().empty:
+            self.network.get_parameters()[0].set_layout(Layout("NCHW"))
+
+        batch_dim = get_batch(self.network)
+        if batch_dim.is_static:
+            batch_size = batch_dim.get_length()
+        self.executable_network = self.ie.compile_model(
+            self.network, device_name=backend
+        )
+
+    def detect(self, img):  # img is a np array
+        y = self.executable_network([img]).values()
+
+    def _process_net_out(self, tensor):
+        # 25200 is the total number of anchorboxes in the model output.
+        tns = np.array(tensor).reshape(25200, len(self.classes) + 5)
+
+        count = 0
+        for pred in tns[:]:
+            assert pred.shape[0] == 5 + len(self.classes)
+
+            class_scores = pred[5:]
+            score_idx = np.argmax(class_scores)
+            best_score = class_scores[score_idx]
+
+            if best_score >= CLASS_THRESH:
+                x, y, w, h, c = pred[:5]
+                left = x - 0.5 * w
+                top = y - 0.5 * h
+
+                rect = np.array((left, top, w, h))
+
+                self.class_ids[count] = score_idx
+                self.confidences[count] = best_score * c
+                self.boxes[count] = rect
+                count += 1
+
+        nms_res = cv2.dnn.NMSBoxes(
+            self.boxes[:count], self.confidences[:count], NMS_SCORE_THRESH, NMS_THRESH
+        )
+        return (
+            nms_res,
+            self.boxes[:count],
+            self.confidences[:count],
+            self.class_ids[:count],
+        )
+
+    def _resize_to_frame(self, imraw):
+        major_dim = np.max(imraw.shape)
+        scale = 640 / major_dim
+        imraw = cv2.resize(imraw, None, fx=scale, fy=scale)
+        img = np.zeros((640, 640, 3), dtype=imraw.dtype)
+        img[: imraw.shape[0], : imraw.shape[1], :] = imraw
+        return img
