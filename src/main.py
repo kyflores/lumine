@@ -39,8 +39,8 @@ def detect(opt):
 
     apriltags = atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     # yolov5 = yolo.YoloV5OpenCVDetector(opt.weights)
-    yolov5 = yolo.YoloV5TorchDetector(opt.weights)
-    # yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights)
+    # yolov5 = yolo.YoloV5TorchDetector(opt.weights)
+    yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights)
 
     tracker = trk.Sort(opt.max_age, opt.min_hits, opt.iou_thresh)
 

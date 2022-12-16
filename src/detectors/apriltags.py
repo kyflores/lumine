@@ -1,5 +1,7 @@
 import dt_apriltags as dtap
 from scipy.spatial.transform import Rotation
+import numpy as np
+import cv2
 
 # Default parameter set to use for the Logitech C310
 C310_PARAMS = (
