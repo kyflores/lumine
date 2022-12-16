@@ -12,6 +12,11 @@ This project is only tested on linux.
 `requirements.txt` is a mess right now, future work will try to pair down
 the dependencies needed.
 
+## Embedded Hardware Support (goals)
+* CPU, with pytorch and OpenVINO backends.
+* Intel IGPs with OpenVINO
+* (eventually) NVIDIA Jetson with TensorRT model conversion
+
 ## Common detection format
 All detectors should support a `detect(img)` function.
 
@@ -56,14 +61,34 @@ but just from experimenting with it, it doesn't seem reliable. Setting
 the gain for instance changes the number reported by `v4l2-ctl` but
 doesn't affect the image.
 
+## Prepping OpenVINO models
+This project uses OpenVINO for inference on Intel integrated graphics.
+The easiest way to get the Ultralytics/YoloV5 model in OpenVINO format is to
+simply request it when calling export.
+`python export.py --weights yolov5s.pt --include openvino`
+Models exported this way appear to be the standard float32 version.
+
+The hardware may also take advantage of float16 for a performance improvement
+with minimal effort.
+
+To get the model into float16 format:
+```
+python export.py --weights yolov5s.pt --include onnx
+
+# mo is installed with the openvino package.
+mo --input_model yolov5s.onnx --data_type FP16
+```
+
 ## TODOs
 * Improve mapping SORT boxes back to detect boxes. Current method allows
 double assignment, and this seems bugged.
 * Add blob detector module. Kind of questionable b/c it is being phased out.
 * Integrate `robotpy` for network tables support
-* Add Yolo OpenVINO backend support for inference on Intel targets.
 * Support streaming the augmented camera feed to the driver station.
 * Add stereo depth map if second camera is available.
+* Add OpenVINO int8 quantization flow. Should accept the same dir hierarchy
+  as the yolov5 training set since we need representative images during calibration.
+* Support fp16 and int8 calibration for Jetson with TensorRT, and validate pytorch.
 
 ### Style
 This project uses `black` because it's easy.

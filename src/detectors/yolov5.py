@@ -246,7 +246,6 @@ class YoloV5OpenCVDetector:
 
 from openvino.runtime import Core, Layout, get_batch
 
-
 class YoloV5OpenVinoDetector:
     def __init__(self, openvino_dir, classes=YOLOV5_CLASSES, backend="CPU"):
         model = None
@@ -255,7 +254,6 @@ class YoloV5OpenVinoDetector:
         mapping = None
         files = os.listdir(openvino_dir)
         for x in files:
-            print(x)
             if x.endswith(".xml"):
                 model = "{}/{}".format(openvino_dir, x)
             elif x.endswith(".bin"):
