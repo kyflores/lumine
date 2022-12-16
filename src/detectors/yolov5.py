@@ -1,7 +1,16 @@
 import torch
+import torchvision.ops as ops
 import numpy as np
 import cv2
 import os
+import time
+
+# owh is Origin, Width, Height. OpenCV uses this format
+def xywh2owh(x):
+    x[:, 0] = x[:, 0] - x[:, 2] / 2  # x origin
+    x[:, 1] = x[:, 1] - x[:, 3] / 2  # y origin
+    return x
+
 
 # TODO: For OpenCV DNN
 BOX_THRESH = 0.25
@@ -237,12 +246,27 @@ class YoloV5OpenCVDetector:
 
 from openvino.runtime import Core, Layout, get_batch
 
-
 class YoloV5OpenVinoDetector:
-    def __init__(self, openvino_dir, classes, backend="CPU"):
-        model = None  # *.xml
-        weights = None  # *.bin
-        meta = None  # *.yaml
+    def __init__(self, openvino_dir, classes=YOLOV5_CLASSES, backend="CPU"):
+        model = None
+        weights = None
+        meta = None
+        mapping = None
+        files = os.listdir(openvino_dir)
+        for x in files:
+            if x.endswith(".xml"):
+                model = "{}/{}".format(openvino_dir, x)
+            elif x.endswith(".bin"):
+                weights = "{}/{}".format(openvino_dir, x)
+            elif x.endswith(".yaml"):
+                meta = "{}/{}".format(openvino_dir, x)
+            elif x.endswith(".mapping"):
+                mapping = "{}/{}".format(openvino_dir, x)
+
+        self.classes = classes
+        self.class_ids = None
+        self.confidences = None
+        self.boxes = None
 
         self.ie = Core()
         self.network = self.ie.read_model(model=model, weights=weights)
@@ -257,44 +281,68 @@ class YoloV5OpenVinoDetector:
             self.network, device_name=backend
         )
 
-    def detect(self, img):  # img is a np array
-        y = self.executable_network([img]).values()
+    def detect(self, im):  # img is a np array
+        im = self.resize_to_frame(im)
+        blob = cv2.dnn.blobFromImage(
+            im,
+            1.0 / 255,
+            size=(im.shape[1], im.shape[0]),
+            mean=(0.0, 0.0, 0.0),
+            swapRB=False,
+            crop=False,
+        )
+
+        y = list(self.executable_network([blob]).values())
+
+        (nms_res, boxes, confidences, class_ids) = self._process_net_out(y[0])
+
+        res = []
+        for idx in nms_res:
+            conf = confidences[idx]
+            classnm = class_ids[idx]
+            x, y, w, h = np.clip(boxes[idx], 0, 640).astype(np.uint32)
+            d = (x, y, x + w, y + h)  # xyxy format
+            corners = np.array(((d[0], d[1]), (d[0], d[3]), (d[2], d[3]), (d[2], d[1])))
+
+            res.append(
+                {
+                    "type": "yolov5",
+                    "id": self.classes[classnm],
+                    "color": (0, 255, 0),
+                    "corners": corners,
+                    "confidence": conf,
+                    "sort_xyxy": np.append(d[0:4], conf),
+                }
+            )
+        return res
 
     def _process_net_out(self, tensor):
-        # 25200 is the total number of anchorboxes in the model output.
-        tns = np.array(tensor).reshape(25200, len(self.classes) + 5)
+        tensor = tensor.squeeze()
 
-        count = 0
-        for pred in tns[:]:
-            assert pred.shape[0] == 5 + len(self.classes)
+        best_score = np.max(tensor[:, 5:], axis=1)
+        # Where the best score >= the class thresh
+        valid = best_score >= CLASS_THRESH
+        tensor = tensor[valid]
 
-            class_scores = pred[5:]
-            score_idx = np.argmax(class_scores)
-            best_score = class_scores[score_idx]
-
-            if best_score >= CLASS_THRESH:
-                x, y, w, h, c = pred[:5]
-                left = x - 0.5 * w
-                top = y - 0.5 * h
-
-                rect = np.array((left, top, w, h))
-
-                self.class_ids[count] = score_idx
-                self.confidences[count] = best_score * c
-                self.boxes[count] = rect
-                count += 1
+        self.class_ids = np.argmax(tensor[:, 5:], axis=1)
+        self.boxes = xywh2owh(tensor[:, :4])
+        self.confidences = tensor[:, 4:5].squeeze() * best_score[valid]
 
         nms_res = cv2.dnn.NMSBoxes(
-            self.boxes[:count], self.confidences[:count], NMS_SCORE_THRESH, NMS_THRESH
-        )
-        return (
-            nms_res,
-            self.boxes[:count],
-            self.confidences[:count],
-            self.class_ids[:count],
+            self.boxes, self.confidences, NMS_SCORE_THRESH, NMS_THRESH
         )
 
-    def _resize_to_frame(self, imraw):
+        return (
+            nms_res,
+            self.boxes,
+            self.confidences,
+            self.class_ids,
+        )
+
+    def resize_to_frame(self, imraw):
+        if imraw.shape == (640, 640, 3):
+            return imraw
+
         major_dim = np.max(imraw.shape)
         scale = 640 / major_dim
         imraw = cv2.resize(imraw, None, fx=scale, fy=scale)

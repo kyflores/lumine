@@ -39,13 +39,12 @@ def detect(opt):
 
     apriltags = atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     # yolov5 = yolo.YoloV5OpenCVDetector(opt.weights)
-    yolov5 = yolo.YoloV5TorchDetector(opt.weights)
-    # yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights)
+    # yolov5 = yolo.YoloV5TorchDetector(opt.weights)
+    yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights, backend="GPU")
 
     tracker = trk.Sort(opt.max_age, opt.min_hits, opt.iou_thresh)
 
     while True:
-        t_begin = time.time()
         err, frame = cap.read()
         if not err:
             print("Media source didn't produce frame, stopping...")
@@ -53,6 +52,7 @@ def detect(opt):
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+        t_begin = time.time()
         at_det = apriltags.detect(frame_gray)
         yolo_det = yolov5.detect(frame)
 
@@ -67,7 +67,7 @@ def detect(opt):
 
         if opt.table:
             os.system("cls" if os.name == "nt" else "clear")
-            print("{:.2f} iters/s".format(1 / (t_end - t_begin)))
+            print("Took {:.2f} ms".format(1000 * (t_end - t_begin)))
             print(common.detections_as_table(all_dets))
 
         if cv2.pollKey() > -1:
