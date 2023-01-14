@@ -35,12 +35,13 @@ def detect(opt):
         exit(1)
 
     if source_type == "webcam":
+        # 1280x960 is
         cap = camera.CameraCtl(source, (480, 640), 30)
 
     apriltags = atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
-    # yolov5 = yolo.YoloV5OpenCVDetector(opt.weights)
+    yolov5 = yolo.YoloV5OpenCVDetector(opt.weights)
     # yolov5 = yolo.YoloV5TorchDetector(opt.weights)
-    yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights, backend="GPU")
+    # yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights, backend="CPU")
 
     tracker = trk.Sort(opt.max_age, opt.min_hits, opt.iou_thresh)
 

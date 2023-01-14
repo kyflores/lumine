@@ -89,6 +89,9 @@ double assignment, and this seems bugged.
 * Add OpenVINO int8 quantization flow. Should accept the same dir hierarchy
   as the yolov5 training set since we need representative images during calibration.
 * Support fp16 and int8 calibration for Jetson with TensorRT, and validate pytorch.
+* Investigate async so that apriltags can update the feed more
+  often than the YOLO detector
+* Integrate some kind of OCR for bumper text detection
 
 ### Style
 This project uses `black` because it's easy.

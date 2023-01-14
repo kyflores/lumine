@@ -19,9 +19,9 @@ class AprilTagDetector:
         self.tag_family = tag_family
         self.det = dtap.Detector(
             families=tag_family,
-            nthreads=4,
+            nthreads=1,
             quad_decimate=1.0,
-            quad_sigma=0.0,
+            quad_sigma=0.8,
             refine_edges=1,
             decode_sharpening=0.25,
             debug=0,
@@ -50,7 +50,7 @@ class AprilTagDetector:
                     "id": det.tag_id,
                     "color": (255, 0, 0),
                     "corners": corners_int,  # Pixel units
-                    "sort_xyxy": sort_xyxy,
+                    "confidence": det.decision_margin,
                     "translation": det.pose_t,  # tag_size units
                     "rotation_euler": ro,  # degrees
                 }

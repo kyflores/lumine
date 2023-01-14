@@ -1,8 +1,16 @@
 import numpy as np
 import torch
+import cv2
 import torchvision.ops as ops
 import subprojects.sort.sort as sort
 
+# Corners and confidence to SORT (1,5) format.
+# SORT wants [x,y,x,y,conf]
+def cc2sort(corners, confidence):
+    assert(corners.shape == (4, 2))
+    (x0, y0, w, h) = cv2.boundingRect(corners.astype(int))
+    sort_xyxy = np.array((x0, y0, x0 + w, y0 + h, confidence))
+    return sort_xyxy
 
 class Sort:
     def __init__(self, max_age, min_hits, iou_threshold):
@@ -15,7 +23,7 @@ class Sort:
         self.trackers = None
 
     def map_to_sort_id(self, dets, trackers):
-        xyxys = [torch.tensor(x["sort_xyxy"][:4]) for x in dets]
+        xyxys = [torch.tensor(cc2sort(x["corners"], 1)[:4]) for x in dets]
 
         # Collect all the detections into an (N, 4)
         det_c = torch.stack(xyxys)
@@ -33,7 +41,7 @@ class Sort:
             dets[ix]["sort_id"] = int(trackers[m][-1])
 
     def update(self, detects):
-        sort_dets = [d["sort_xyxy"] for d in detects]
+        sort_dets = [cc2sort(d["corners"], d["confidence"]) for d in detects]
         if len(sort_dets) == 0:
             sort_dets = np.empty((0, 5))
         else:
