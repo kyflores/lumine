@@ -7,10 +7,11 @@ import subprojects.sort.sort as sort
 # Corners and confidence to SORT (1,5) format.
 # SORT wants [x,y,x,y,conf]
 def cc2sort(corners, confidence):
-    assert(corners.shape == (4, 2))
+    assert corners.shape == (4, 2)
     (x0, y0, w, h) = cv2.boundingRect(corners.astype(int))
     sort_xyxy = np.array((x0, y0, x0 + w, y0 + h, confidence))
     return sort_xyxy
+
 
 class Sort:
     def __init__(self, max_age, min_hits, iou_threshold):

@@ -31,8 +31,9 @@ class AprilTagDetector:
         return self.tag_family
 
     def detect(self, img):
+        frame_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         detections = self.det.detect(
-            img,
+            frame_gray,
             estimate_tag_pose=True,
             camera_params=self.camera_params,
             tag_size=self.tag_size,
@@ -43,14 +44,17 @@ class AprilTagDetector:
             ro = Rotation.from_matrix(det.pose_R).as_euler("zxy", degrees=True)
             corners_int = det.corners.astype(np.float32)
             (x0, y0, w, h) = cv2.boundingRect(corners_int)
-            sort_xyxy = np.array((x0, y0, x0 + w, y0 + h, 1))
+
+            # Experimentally, high 60's is a great detect, but 70.0 isn't a specified
+            # maximum hence the clip.
+            scaled_dm = np.clip(det.decision_margin, 0.0, 70.0) / 70.0
             res.append(
                 {
                     "type": "apriltags",
                     "id": det.tag_id,
                     "color": (255, 0, 0),
                     "corners": corners_int,  # Pixel units
-                    "confidence": det.decision_margin,
+                    "confidence": scaled_dm,
                     "translation": det.pose_t,  # tag_size units
                     "rotation_euler": ro,  # degrees
                 }

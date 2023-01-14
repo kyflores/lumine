@@ -10,8 +10,10 @@ import subprojects.sort.sort as sort
 
 import common
 from detectors import apriltags as atg
-from detectors import yolov5 as yolo
-from detectors import tracker as trk
+from detectors import yolov5_ocv as yolo_ocv
+from detectors import yolov5_openvino as yolo_ov
+from detectors import dummy
+import tracker as trk
 import draw
 import camera
 
@@ -35,11 +37,16 @@ def detect(opt):
         exit(1)
 
     if source_type == "webcam":
-        # 1280x960 is
+        # 1280x960 max res for C310
+        # cap = camera.CameraCtl(source, (960, 1280), 30)
         cap = camera.CameraCtl(source, (480, 640), 30)
 
-    apriltags = atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
-    yolov5 = yolo.YoloV5OpenCVDetector(opt.weights)
+    detectors = [
+        atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size),
+        # yolo_ocv.YoloV5OpenCVDetector(opt.weights),
+        yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="CPU"),
+        dummy.DummyDetector(),
+    ]
     # yolov5 = yolo.YoloV5TorchDetector(opt.weights)
     # yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights, backend="CPU")
 
@@ -51,13 +58,11 @@ def detect(opt):
             print("Media source didn't produce frame, stopping...")
             break
 
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
         t_begin = time.time()
-        at_det = apriltags.detect(frame_gray)
-        yolo_det = yolov5.detect(frame)
+        all_dets = []
+        for de in detectors:
+            all_dets = all_dets + de.detect(frame)
 
-        all_dets = at_det + yolo_det
         all_dets = tracker.update(all_dets)
 
         with_boxes = draw.draw(frame, all_dets)

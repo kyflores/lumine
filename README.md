@@ -17,21 +17,25 @@ the dependencies needed.
 * Intel IGPs with OpenVINO
 * (eventually) NVIDIA Jetson with TensorRT model conversion
 
-## Common detection format
-All detectors should support a `detect(img)` function.
+## Custom detectors
+All detectors should support a `detect(img) -> list(dict)` function.
 
-Detectors should return a dictionary with at least the following
-for each detection type
-* `type`, Which detector this originated from
-* `id` Could be a tag family, object type
-* `color` RGB triple for the box color.
+`detect` is passed a 3 channel RGB image as a numpy array of shape (H, W, 3)
+
+Detectors should produce a dictionary with at least the following
+for each detection instance.
+* `type`, Which detector this originated from.
+* `id` Could be a tag family, object type. Info about what's in the bounding box.
+* `color` RGB triple for the box color. Used when drawing the feed.
 * `corners` of the bounding area of the detection
   * numpy array, 4 rows, 2 columns, shape = (4, 2)
-* `sort_xyxy`, xmin, xmax, ymin, ymax format for a bounding box.
-  * This format is required by the SORT tracker, and is mostly
-    redunant with `corners`
+  * `corners` should be scaled to the input image: If the input is rescaled inside the
+     `detect` function, corners must be scaled back to the original.
+* `confidence` A confidence value between 0 and 1 for the detection.
+  * 0 is worst, 1.0 is best. Scale the value if it's not between 0 and 1.0.
 
-Multiple detections should be returned in a list.
+`detect` should always return a list of detections. If there is only one detection, it
+should still be in a list.
 
 Several detector-specific or post-processing keys may also
 exist, but are not guaranteed for every object.
@@ -84,13 +88,13 @@ mo --input_model yolov5s.onnx --data_type FP16
 double assignment, and this seems bugged.
 * Add blob detector module. Kind of questionable b/c it is being phased out.
 * Integrate `robotpy` for network tables support
+* Implement `robotpy` Apriltags. "16h5" from duckietown seems broken
 * Support streaming the augmented camera feed to the driver station.
-* Add stereo depth map if second camera is available.
 * Add OpenVINO int8 quantization flow. Should accept the same dir hierarchy
   as the yolov5 training set since we need representative images during calibration.
 * Support fp16 and int8 calibration for Jetson with TensorRT, and validate pytorch.
 * Investigate async so that apriltags can update the feed more
-  often than the YOLO detector
+  often than the YOLO detector. Or at least run detectors concurrently
 * Integrate some kind of OCR for bumper text detection
 
 ### Style
