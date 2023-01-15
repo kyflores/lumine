@@ -1,6 +1,7 @@
 import os
 import argparse
 import time
+import concurrent.futures
 
 import torch
 import numpy as np
@@ -52,33 +53,41 @@ def detect(opt):
 
     tracker = trk.Sort(opt.max_age, opt.min_hits, opt.iou_thresh)
 
-    while True:
-        err, frame = cap.read()
-        if not err:
-            print("Media source didn't produce frame, stopping...")
-            break
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        while True:
+            err, frame = cap.read()
+            if not err:
+                print("Media source didn't produce frame, stopping...")
+                break
 
-        t_begin = time.time()
-        all_dets = []
-        for de in detectors:
-            all_dets = all_dets + de.detect(frame)
+            t_begin = time.time()
 
-        all_dets = tracker.update(all_dets)
+            # Note: This uses a threadpool executor to start each detection
+            # concurrently. Despite GIL, this should still improve performance
+            # because it will at least allow us to do other work like apriltags
+            # while we wait for a DNN accelerator to produce a result
+            asyncres = [executor.submit(x.detect, frame) for x in detectors]
 
-        with_boxes = draw.draw(frame, all_dets)
-        # with_boxes = draw.draw_sort(frame, trackers)
-        cv2.imshow("detector", with_boxes)
+            all_dets = []
+            for res in asyncres:
+                all_dets = all_dets + res.result()
 
-        t_end = time.time()
+            all_dets = tracker.update(all_dets)
 
-        if opt.table:
-            os.system("cls" if os.name == "nt" else "clear")
-            print("Took {:.2f} ms".format(1000 * (t_end - t_begin)))
-            print(common.detections_as_table(all_dets))
+            with_boxes = draw.draw(frame, all_dets)
+            # with_boxes = draw.draw_sort(frame, trackers)
+            cv2.imshow("detector", with_boxes)
 
-        if cv2.pollKey() > -1:
-            cv2.destroyAllWindows()
-            break
+            t_end = time.time()
+
+            if opt.table:
+                os.system("cls" if os.name == "nt" else "clear")
+                print("Took {:.2f} ms".format(1000 * (t_end - t_begin)))
+                print(common.detections_as_table(all_dets))
+
+            if cv2.pollKey() > -1:
+                cv2.destroyAllWindows()
+                break
 
 
 def main():

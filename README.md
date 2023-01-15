@@ -20,7 +20,9 @@ the dependencies needed.
 ## Custom detectors
 All detectors should support a `detect(img) -> list(dict)` function.
 
-`detect` is passed a 3 channel RGB image as a numpy array of shape (H, W, 3)
+`detect` is passed a 3 channel RGB image as a numpy array of shape (H, W, 3).
+Detectors should not modify the image they receive, if you must modify it,
+create a copy and modify that.
 
 Detectors should produce a dictionary with at least the following
 for each detection instance.

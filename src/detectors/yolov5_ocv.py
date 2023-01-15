@@ -9,6 +9,10 @@ import detectors.yolo_common as yc
 # at compile time. IIRC opencv-python build on PyPi does NOT enable
 # cuda, vulkan, or openvino. When compiling OpenCV, it's worth trying
 # to include MKL as well, to improve the CPU backend performance.
+#
+# Baseline CPU performance isn't great, so recommended to use this only as
+# a testing aid. The CPU backend doesn't seem SMT aware as it still maxes out
+# the logical cores.
 class YoloV5OpenCVDetector:
     def __init__(
         self, weights="yolov5s.onnx", classes=yc.YOLOV5_CLASSES, backend="cpu"
