@@ -2,6 +2,7 @@ import os
 import argparse
 import time
 import concurrent.futures
+import threading
 
 import torch
 import numpy as np
@@ -11,9 +12,7 @@ import subprojects.sort.sort as sort
 
 import common
 from detectors import apriltags as atg
-from detectors import yolov5 as yolo
 from detectors import yolov5_ocv as yolo_ocv
-from detectors import yolov5_openvino as yolo_ov
 from detectors import dummy
 import tracker as trk
 import draw
@@ -43,6 +42,37 @@ def detect(opt):
         # cap = camera.CameraCtl(source, (960, 1280), 30)
         cap = camera.CameraCtl(source, (480, 640), 30)
 
+    cond = threading.Condition()
+    lumine_table = None
+    if opt.nt:
+        # Don't import if the option is false to avoid needing this dep for development.
+        from networktables import NetworkTables
+
+        tn = opt.nt
+        notified = [False]
+        team_ip = "10.{}.{}.2".format(tn[:2], tn[2:4])
+        print("Network tables on {}".format(team_ip))
+        NetworkTables.initialize(server=team_ip)
+
+        # Block until network tables is ready: https://robotpy.readthedocs.io/en/stable/guide/nt.html#networktables-guide
+        def connectionListener(connected, info):
+            print(info, "; Connected=%s" % connected)
+            with cond:
+                notified[0] = True
+                cond.notify()
+
+        NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
+        with cond:
+            print("Waiting")
+            if not notified[0]:
+                cond.wait()
+        lumine_table = NetworkTables.getTable("Lumine")
+
+    # Initialize detectors here. Everything in this list must implement the detect function
+    # detailed in the readme and return a list of dictionaries with the right keys.
+
+    from detectors import yolov5_openvino as yolo_ov
+    # from detectors import yolov5 as yolo
     detectors = [
         atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size),
         # yolo_ocv.YoloV5OpenCVDetector(opt.weights),
@@ -82,12 +112,18 @@ def detect(opt):
 
             t_end = time.time()
 
+            # Print out the formatted ASCII table if it was requested.
             if opt.table:
                 os.system("cls" if os.name == "nt" else "clear")
                 ms = 1000 * (t_end - t_begin)
                 fps = 1 / (t_end - t_begin)
                 print("Took {:.2f} ms, {:.2f} iter/sec".format(ms, fps))
                 print(common.detections_as_table(all_dets))
+
+            # Updated network tables if it was enabled..
+            if lumine_table is not None:
+                # table.put ...
+                pass
 
             if cv2.pollKey() > -1:
                 cv2.destroyAllWindows()
@@ -146,6 +182,11 @@ def main():
     )
     parser.add_argument(
         "--table", action="store_true", help="Print the detection table."
+    )
+    parser.add_argument(
+        "--nt",
+        type=str,
+        help="Enable network tables client for the given team number.",
     )
 
     opt = parser.parse_args()
