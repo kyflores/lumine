@@ -11,6 +11,7 @@ import subprojects.sort.sort as sort
 
 import common
 from detectors import apriltags as atg
+from detectors import yolov5 as yolo
 from detectors import yolov5_ocv as yolo_ocv
 from detectors import yolov5_openvino as yolo_ov
 from detectors import dummy
@@ -45,11 +46,10 @@ def detect(opt):
     detectors = [
         atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size),
         # yolo_ocv.YoloV5OpenCVDetector(opt.weights),
+        # yolo.YoloV5TorchDetector(opt.weights),
         yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="CPU"),
         dummy.DummyDetector(),
     ]
-    # yolov5 = yolo.YoloV5TorchDetector(opt.weights)
-    # yolov5 = yolo.YoloV5OpenVinoDetector(opt.weights, backend="CPU")
 
     tracker = trk.Sort(opt.max_age, opt.min_hits, opt.iou_thresh)
 
@@ -72,6 +72,8 @@ def detect(opt):
             for res in asyncres:
                 all_dets = all_dets + res.result()
 
+            all_dets = [x for x in all_dets if (x["confidence"] >= opt.conf_thresh)]
+
             all_dets = tracker.update(all_dets)
 
             with_boxes = draw.draw(frame, all_dets)
@@ -82,7 +84,9 @@ def detect(opt):
 
             if opt.table:
                 os.system("cls" if os.name == "nt" else "clear")
-                print("Took {:.2f} ms".format(1000 * (t_end - t_begin)))
+                ms = 1000 * (t_end - t_begin)
+                fps = 1 / (t_end - t_begin)
+                print("Took {:.2f} ms, {:.2f} iter/sec".format(ms, fps))
                 print(common.detections_as_table(all_dets))
 
             if cv2.pollKey() > -1:
@@ -133,6 +137,12 @@ def main():
         type=float,
         default=0.15,
         help="IOU threshold for SORT. Smaller can track faster movements but reduces accuracy",
+    )
+    parser.add_argument(
+        "--conf_thresh",
+        type=float,
+        default=0.50,
+        help="Confidence threshold for processing a detect.",
     )
     parser.add_argument(
         "--table", action="store_true", help="Print the detection table."

@@ -3,7 +3,6 @@ import numpy as np
 
 
 def draw(img, detections):
-    # TODO placeholder skip if empty
     if len(detections) == 0:
         return img
 
