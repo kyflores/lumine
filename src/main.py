@@ -11,12 +11,31 @@ import cv2
 import subprojects.sort.sort as sort
 
 import common
-from detectors import apriltags as atg
-from detectors import yolov5_ocv as yolo_ocv
-from detectors import dummy
 import tracker as trk
 import draw
 import camera
+
+# Initialize detectors here. Everything in this list must implement the detect function
+# detailed in the readme and return a list of dictionaries with the right keys.
+def get_detectors(opt):
+    detectors = []
+
+    from detectors import apriltags as atg
+    detectors.append(atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size))
+
+    # from detectors import yolov5_ocv as yolo_ocv
+    # detectors.append(yolo_ocv.YoloV5OpenCVDetector(opt.weights))
+
+    # from detectors import yolov5 as yolo
+    # detectors.append(yolo.YoloV5TorchDetector(opt.weights))
+
+    from detectors import yolov5_openvino as yolo_ov
+    detectors.append(yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="CPU"))
+
+    from detectors import dummy
+    detectors.append(dummy.DummyDetector())
+
+    return detectors
 
 
 def detect(opt):
@@ -68,18 +87,7 @@ def detect(opt):
                 cond.wait()
         lumine_table = NetworkTables.getTable("Lumine")
 
-    # Initialize detectors here. Everything in this list must implement the detect function
-    # detailed in the readme and return a list of dictionaries with the right keys.
-
-    from detectors import yolov5_openvino as yolo_ov
-    # from detectors import yolov5 as yolo
-    detectors = [
-        atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size),
-        # yolo_ocv.YoloV5OpenCVDetector(opt.weights),
-        # yolo.YoloV5TorchDetector(opt.weights),
-        yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="CPU"),
-        dummy.DummyDetector(),
-    ]
+    detectors = get_detectors(opt)
 
     tracker = trk.Sort(opt.max_age, opt.min_hits, opt.iou_thresh)
 

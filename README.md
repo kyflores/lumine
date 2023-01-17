@@ -85,6 +85,11 @@ python export.py --weights yolov5s.pt --include onnx
 mo --input_model yolov5s.onnx --data_type FP16
 ```
 
+YoloV7 should use
+```
+python export.py --weights yolov7.pt --simplify --grid --topk-all 100 --iou-thres 0.65 --conf-thres 0.35 --img-size 640 640 --max-wh 640
+```
+
 ## TODOs
 * Improve mapping SORT boxes back to detect boxes. Current method allows
 double assignment, and this seems bugged.
@@ -98,6 +103,9 @@ double assignment, and this seems bugged.
 * Investigate async so that apriltags can update the feed more
   often than the YOLO detector. Or at least run detectors concurrently
 * Integrate some kind of OCR for bumper text detection
+* Fix installation of `lap` dep, it requires that numpy is installed first to build.
+* Allow OpenVINO to select GPU plugin automatically if Xe graphics are detected
+  * `AUTO` might be a supported device string, check on this.
 
 ### Style
 This project uses `black` because it's easy.
