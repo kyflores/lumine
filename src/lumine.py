@@ -20,8 +20,11 @@ import camera
 def get_detectors(opt):
     detectors = []
 
-    from detectors import apriltags as atg
-    detectors.append(atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size))
+    from detectors import dt_apriltags as atg
+
+    detectors.append(
+        atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
+    )
 
     # from detectors import yolov5_ocv as yolo_ocv
     # detectors.append(yolo_ocv.YoloV5OpenCVDetector(opt.weights))
@@ -30,10 +33,14 @@ def get_detectors(opt):
     # detectors.append(yolo.YoloV5TorchDetector(opt.weights))
 
     from detectors import yolov5_openvino as yolo_ov
+
     detectors.append(yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="CPU"))
 
-    from detectors import dummy
-    detectors.append(dummy.DummyDetector())
+    # from detectors import dummy
+    # detectors.append(dummy.DummyDetector())
+
+    # from detectors import blob_detector as blob
+    # detectors.append(blob.BlobDetector(np.array((30, 150))))
 
     return detectors
 
@@ -46,6 +53,7 @@ def detect(opt):
         source_type = "webcam"
         print("Configured webcam {} as source".format(source))
     except ValueError:
+        source_type = "video"
         source = str(opt.source)
         cap = cv2.VideoCapture(source)
         if not cap.isOpened():

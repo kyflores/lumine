@@ -13,8 +13,10 @@ C310_PARAMS = (
 
 
 class AprilTagDetector:
-    def __init__(self, camera_params, tag_family, tag_size=1.0):
+    def __init__(self, camera_params, tag_family, tag_size=1.0, dm_ceiling=70):
         self.camera_params = camera_params
+
+        self.dm_ceiling = dm_ceiling
         self.tag_size = tag_size
         self.tag_family = tag_family
         self.det = dtap.Detector(
@@ -47,7 +49,9 @@ class AprilTagDetector:
 
             # Experimentally, high 60's is a great detect, but 70.0 isn't a specified
             # maximum hence the clip.
-            scaled_dm = np.clip(det.decision_margin, 0.0, 70.0) / 70.0
+            scaled_dm = (
+                np.clip(det.decision_margin, 0.0, self.dm_ceiling) / self.dm_ceiling
+            )
             res.append(
                 {
                     "type": "apriltags",
