@@ -7,7 +7,7 @@ from openvino.runtime import Core, Layout, get_batch
 
 
 class YoloV5OpenVinoDetector:
-    def __init__(self, openvino_dir, classes=yc.YOLOV5_CLASSES, backend="CPU"):
+    def __init__(self, openvino_dir, classes=yc.YOLOV5_CLASSES, backend="AUTO"):
         model = None
         weights = None
         meta = None
@@ -40,7 +40,7 @@ class YoloV5OpenVinoDetector:
         )
 
     def detect(self, im):  # img is a np array
-        im = self.resize_to_frame(im)
+        im, self.scale = yc.resize_to_frame(im)
         blob = cv2.dnn.blobFromImage(
             im,
             1.0 / 255,
@@ -65,22 +65,11 @@ class YoloV5OpenVinoDetector:
             res.append(
                 {
                     "type": "yolov5",
-                    "id": self.classes[classnm],
+                    # "id": self.classes[classnm], # Numbers are more convenient for NT.
+                    "id": classnm,
                     "color": (0, 255, 0),
                     "corners": corners * self.scale,
                     "confidence": conf,
                 }
             )
         return res
-
-    def resize_to_frame(self, imraw):
-        if imraw.shape == (640, 640, 3):
-            return imraw
-
-        major_dim = np.max(imraw.shape)
-        scale = 640 / major_dim
-        self.scale = 1 / scale
-        imraw = cv2.resize(imraw, None, fx=scale, fy=scale)
-        img = np.zeros((640, 640, 3), dtype=imraw.dtype)
-        img[: imraw.shape[0], : imraw.shape[1], :] = imraw
-        return img

@@ -2,15 +2,16 @@
 Prototype multi object detector and tracker suite for FRC
 
 ## Install
-Preferably in a virtualenv...
+Create a virtualenv first and activate it. Then:
 ```
-pip install -r requirements.txt
+bash install.sh
 ```
+This doesn't use a simple requirements.txt install b/c a certain
+package needs to be sequenced with another on.
+
 And get `v4l2-ctl` from your package manager.
 
-This project is only tested on linux.
-`requirements.txt` is a mess right now, future work will try to pair down
-the dependencies needed.
+This project is tested on Linux w/ conda with python <=3.10
 
 ## Embedded Hardware Support (goals)
 * CPU, with pytorch and OpenVINO backends.
@@ -67,6 +68,27 @@ but just from experimenting with it, it doesn't seem reliable. Setting
 the gain for instance changes the number reported by `v4l2-ctl` but
 doesn't affect the image.
 
+## Networktables
+If using `lumine` with network tables, pass `--nt TE.AM` on the command line or pass
+a full ip like `127.0.0.1`.
+
+Lumine creates the table `/lumine` and a subtable for each detector family. For instance,
+`lumine/yolo` and `lumine/apriltags`.
+
+Within each detector specific table, data is stored in a "struct of arrays" consisting
+of an array of scalars for each property. For instance, `yolo` produces...
+```
+/lumine/yolo
+
+len: <number>
+ids: [0, 4, 62, 1....]
+confidence: [0.5, 0.42, 0.32, 0.12....]
+```
+To access all the properties for a one particular detection, you must request the same
+index from each property array.
+
+Detections are always sorted in order of descending confidence.
+
 ## Prepping OpenVINO models
 This project uses OpenVINO for inference on Intel integrated graphics.
 The easiest way to get the Ultralytics/YoloV5 model in OpenVINO format is to
@@ -93,19 +115,20 @@ python export.py --weights yolov7.pt --simplify --grid --topk-all 100 --iou-thre
 ## TODOs
 * Improve mapping SORT boxes back to detect boxes. Current method allows
 double assignment, and this seems bugged.
+  * We might want to run a single sort instance per detector type
 * Add blob detector module. Kind of questionable b/c it is being phased out.
-* Integrate `robotpy` for network tables support
-* Implement `robotpy` Apriltags. "16h5" from duckietown seems broken
 * Support streaming the augmented camera feed to the driver station.
 * Add OpenVINO int8 quantization flow. Should accept the same dir hierarchy
   as the yolov5 training set since we need representative images during calibration.
+  * int8 is only for CPUs, so maybe this is not useful. Xe IGPU cannot benefit from int8
 * Support fp16 and int8 calibration for Jetson with TensorRT, and validate pytorch.
-* Investigate async so that apriltags can update the feed more
-  often than the YOLO detector. Or at least run detectors concurrently
 * Integrate some kind of OCR for bumper text detection
-* Fix installation of `lap` dep, it requires that numpy is installed first to build.
-* Allow OpenVINO to select GPU plugin automatically if Xe graphics are detected
-  * `AUTO` might be a supported device string, check on this.
+* Add an option to save inference results from a run back into a format CVAT understands
+  This will allow `lumine` to label images using an undertrained model in order to
+  label new video data more rapidly.
+* Figure out how to request a faster update rate from NT
+* Test cscore module
+* Support multiple cameras and switching
 
 ### Style
 This project uses `black` because it's easy.

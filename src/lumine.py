@@ -20,10 +20,10 @@ import camera
 def get_detectors(opt):
     detectors = []
 
-    from detectors import dt_apriltags as atg
+    from detectors import rpy_apriltags as atg
 
     detectors.append(
-        atg.AprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
+        atg.RobotpyAprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     )
 
     # from detectors import yolov5_ocv as yolo_ocv
@@ -34,7 +34,7 @@ def get_detectors(opt):
 
     from detectors import yolov5_openvino as yolo_ov
 
-    detectors.append(yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="CPU"))
+    detectors.append(yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO"))
 
     # from detectors import dummy
     # detectors.append(dummy.DummyDetector())
@@ -73,27 +73,9 @@ def detect(opt):
     lumine_table = None
     if opt.nt:
         # Don't import if the option is false to avoid needing this dep for development.
-        from networktables import NetworkTables
+        import nt_formatter
 
-        tn = opt.nt
-        notified = [False]
-        team_ip = "10.{}.{}.2".format(tn[:2], tn[2:4])
-        print("Network tables on {}".format(team_ip))
-        NetworkTables.initialize(server=team_ip)
-
-        # Block until network tables is ready: https://robotpy.readthedocs.io/en/stable/guide/nt.html#networktables-guide
-        def connectionListener(connected, info):
-            print(info, "; Connected=%s" % connected)
-            with cond:
-                notified[0] = True
-                cond.notify()
-
-        NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
-        with cond:
-            print("Waiting")
-            if not notified[0]:
-                cond.wait()
-        lumine_table = NetworkTables.getTable("Lumine")
+        lumine_table = nt_formatter.NtFormatter(opt.nt, nt_server_override="127.0.0.1")
 
     detectors = get_detectors(opt)
 
@@ -119,6 +101,7 @@ def detect(opt):
                 all_dets = all_dets + res.result()
 
             all_dets = [x for x in all_dets if (x["confidence"] >= opt.conf_thresh)]
+            all_dets.sort(key=lambda x: x["confidence"], reverse=True)
 
             all_dets = tracker.update(all_dets)
 
@@ -138,8 +121,10 @@ def detect(opt):
 
             # Updated network tables if it was enabled..
             if lumine_table is not None:
-                # table.put ...
-                pass
+                y_res = executor.submit(lumine_table.update_yolo, all_dets)
+                a_res = executor.submit(lumine_table.update_apriltags_rpy, all_dets)
+                a_res.result()
+                y_res.result()
 
             if cv2.pollKey() > -1:
                 cv2.destroyAllWindows()

@@ -40,7 +40,7 @@ class YoloV5OpenCVDetector:
         self.out_names = self.net.getUnconnectedOutLayersNames()
 
     def detect(self, img):
-        img = self._resize_to_frame(img)
+        img, self.scale = yc.resize_to_frame(img)
         blob = cv2.dnn.blobFromImage(
             img,
             1.0 / 255,
@@ -73,12 +73,3 @@ class YoloV5OpenCVDetector:
                 }
             )
         return res
-
-    def _resize_to_frame(self, imraw):
-        major_dim = np.max(imraw.shape)
-        scale = 640 / major_dim
-        self.scale = 1 / scale
-        imraw = cv2.resize(imraw, None, fx=scale, fy=scale)
-        img = np.zeros((640, 640, 3), dtype=imraw.dtype)
-        img[: imraw.shape[0], : imraw.shape[1], :] = imraw
-        return img
