@@ -7,7 +7,9 @@ import threading
 
 
 class NtFormatter:
-    def __init__(self, addr, parent_table="lumine", nt_server_override=None):
+    def __init__(
+        self, addr, parent_table="lumine", nt_server_override=None, update_rate=15
+    ):
         ip = ""
         if len(addr) == 4:
             (lower, upper) = addr[:2], addr[2:]
@@ -40,6 +42,9 @@ class NtFormatter:
         #         cond.wait()
 
         self.parent_table = NetworkTables.getTable(parent_table)
+
+        # We expect to get about 15 FPS from the ML object detector.
+        NetworkTables.setUpdateRate(1 / update_rate)
 
     # Converts detections from "array of structs" to "struct of arrays"
     def update_yolo(self, detlist):

@@ -2,16 +2,12 @@
 Prototype multi object detector and tracker suite for FRC
 
 ## Install
-Create a virtualenv first and activate it. Then:
+Provided you are on ubuntu 22.04, just use
 ```
 bash install.sh
 ```
-This doesn't use a simple requirements.txt install b/c a certain
-package needs to be sequenced with another on.
-
-And get `v4l2-ctl` from your package manager.
-
-This project is tested on Linux w/ conda with python <=3.10
+`install.sh` installs everything it can from apt, creates a venv that
+uses system packages, then adds a few python packages that aren't in apt repos.
 
 ## Embedded Hardware Support (goals)
 * CPU, with pytorch and OpenVINO backends.
@@ -103,7 +99,7 @@ To get the model into float16 format:
 ```
 python export.py --weights yolov5s.pt --include onnx
 
-# mo is installed with the openvino package.
+# mo is installed with the openvino-dev package.
 mo --input_model yolov5s.onnx --data_type FP16
 ```
 
@@ -112,23 +108,69 @@ YoloV7 should use
 python export.py --weights yolov7.pt --simplify --grid --topk-all 100 --iou-thres 0.65 --conf-thres 0.35 --img-size 640 640 --max-wh 640
 ```
 
-## TODOs
+TODO
+OpenVINO can also quantize models to int8 but this format is mainly for the benefit of the CPU
+plugin. Int8 is unsupported on Intel IGPs.
+
+## Prepping TensorRT models
+TODO, only support DGPU and JP 5.0+
+
+## Retraining Models
+Lumine aims to offer some choice of object detection model, depending on the coprocessor in use.
+The YoloV5 or YoloV7 families will be the first choice for powerful coprocessors
+that provide acceleration hardware like NVIDIA Jetson or Intel Iris Xe. More limited systems
+can benefit from a lighter model like NanoDet.
+
+We recommend `CVAT` (cvat.ai) for image labeling. CVAT is a labeling server developed by
+Intel that runs a web interface that users can connect to and label images. CVAT is primarily
+self-hosted, but the setup procedure is relatively low-effort thanks to its docker-compose
+procedure. Some cloud based solutions are Roboflow or Supervisely, but may have certain limitations
+in the free-tier.
+
+### YOLO
+Retraining YOLO is quite easy thanks to how complete the Ultralytics solution is.
+Start by exporting to the YOLO 1.1 format in CVAT.
+TODO
+
+### NanoDet
+Start by exporting to the COCO format in CVAT.
+TODO
+
+### Autolabeling
+Lumine provides a script (`utils/autolabel.py`) that uses an existing model to generate YOLO format
+labels to be imported into CVAT. The workflow would look something like this.
+* Collect and label a small dataset. For FRC teams, this could be the field walkthrough videos that
+  FIRST releases on day one.
+* Train the largest instance of YOLO your hardware can handle on the small dataset.
+* Collect additional datasets. Have autolabel analyze them and generate labels.
+* Import labels into CVAT and manually correct errors. Add the finished labels to the cumulative
+  dataset
+* Retrain the model with the cumulative dataset and repeat the process. As the dataset improves
+  autolabel should produce better results.
+
+Ideally autolabeling can progress to a state where it's practical for teams to add data collected
+from practice matches on the first day of competition, and produce a model with higher
+performance in their particular environment as quickly as possible.
+
+## Dev TODOs
 * Improve mapping SORT boxes back to detect boxes. Current method allows
 double assignment, and this seems bugged.
   * We might want to run a single sort instance per detector type
 * Add blob detector module. Kind of questionable b/c it is being phased out.
 * Support streaming the augmented camera feed to the driver station.
+  * Test cscore module
 * Add OpenVINO int8 quantization flow. Should accept the same dir hierarchy
   as the yolov5 training set since we need representative images during calibration.
   * int8 is only for CPUs, so maybe this is not useful. Xe IGPU cannot benefit from int8
 * Support fp16 and int8 calibration for Jetson with TensorRT, and validate pytorch.
-* Integrate some kind of OCR for bumper text detection
-* Add an option to save inference results from a run back into a format CVAT understands
-  This will allow `lumine` to label images using an undertrained model in order to
-  label new video data more rapidly.
 * Figure out how to request a faster update rate from NT
-* Test cscore module
 * Support multiple cameras and switching
+* Add a timestamp to networktables API
+* Support Nanodet training and inference.
+* (High effort) Implement a Lumine vendor library that provides an RPC interface for
+  querying detects rather than using network tables.
+* Replace cscore with a gstreamer solution for HW accelerated temporal codecs.
+  * Also need to provide some sort of driver station client or dashboard plugin
 
 ### Style
 This project uses `black` because it's easy.

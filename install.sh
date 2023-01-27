@@ -1,33 +1,33 @@
-# Installation script for virtualenvs.
-# Might not work in conda if you've installed something with conda
-# that brings along a different libstdc++ version
+# Installation script for Lumine.
+# This script assumes an Ubuntu 22.04 system.
 
-# virtualenv lumine-venv
+sudo apt install -y \
+    python3-virtualenv \
+    python3-numpy \
+    python3-scipy \
+    python3-matplotlib \
+    python3-opencv \
+    python3-skimage \
+    python3-torch \
+    python3-torchvision \
+    python3-prettytable \
+    v4l-utils
 
-# Install pytorch. See https://pytorch.org/ in the `Install Pytorch`
-# section for instructions if not using the standard CUDA latest build
-# (such as CPU only, ROCM, or Apple MPS on M1)
-pip install torch torchvision
+# TODO would be required for appsrc streamer.
+# sudo apt install -y \
+#     python3-gst-1.0  \
+#     python3-gi \
+#     gstreamer1.0-plugins-good \
+#     gstreamer1.0-plugins-bad \
+#     gstreamer1.0-plugins-ugly
+
+virtualenv lumine-venv --system-site-packages
+source lumine-venv/bin/activate
 
 # Intel OpenVINO for AVX512 or IGP inference
-pip install openvino
-pip install openvino-dev # needed for `mo`
-
 export MAKEFLAGS="-j$(nproc)"
-pip install \
-    numpy \
-    matplotlib \
-    scipy \
-    opencv-python \
-    prettytable \
-    scikit-image \
-    filterpy
-
-# This has to come after numpy b/c it uses numpy as a build
-# dependency
-pip install lap
+pip install openvino openvino-dev filterpy lap
 
 # robotpy's libraries
-pip install pynetworktables
-pip install "robotpy[all]"
+pip install pynetworktables "robotpy[all]"
 

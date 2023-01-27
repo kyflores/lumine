@@ -1,18 +1,20 @@
 #! Wrapper class for writing arbitrary images to the dashboard.
 
-from cscore import CameraServer
+import cscore
 import cv2
 import numpy as np
 
 
 class CsCoreStream:
-    def __init__(self, shape, name):
+    def __init__(self, shape, port, fps=30):
         assert len(shape) == 2
-        self.cs = CameraServer.getInstance()
-        self.cs.enableLogging()
-
+        print("Setting up Cscore")
         self.rows, self.cols = shape
-        self.ostream = self.cs.putVideo(name, self.cols, self.rows)
+        self.src = cscore.CvSource(
+            "lumine_src", cscore.VideoMode.PixelFormat.kMJPEG, self.cols, self.rows, fps
+        )
+        self.srv = cscore.MjpegServer("lumine_srv", int(port))
+        self.srv.setSource(self.src)
 
     def write_frame(self, fr):
         rows, cols, channels = fr.shape
@@ -21,7 +23,7 @@ class CsCoreStream:
         if (rows != self.rows) or (cols != self.cols):
             fr = cv2.resize(fr, (cols, rows))
 
-        self.ostream.putFrame(fr)
+        self.src.putFrame(fr)
 
     # TODO, need to release the stream?
     # def destroy

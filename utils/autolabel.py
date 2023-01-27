@@ -95,9 +95,11 @@ class DatasetWriter:
 
         if len(boxes) == 0:
             print("Frame {}: Found no boxes. Skipping...".format(self.frame_counter))
-            return;
+            return
         else:
-            print("Frame {}: generated {} detects".format(self.frame_counter, len(boxes)))
+            print(
+                "Frame {}: generated {} detects".format(self.frame_counter, len(boxes))
+            )
 
         label_name = os.path.join(self.root, "obj_train_data", base_name + ".txt")
         img_name = os.path.join(self.root, "obj_train_data", base_name + ".png")
@@ -112,6 +114,7 @@ class DatasetWriter:
 
     def cleanup(self):
         self.train_file_handle.close()
+
 
 class VideoLoader:
     def __init__(self, videopath, every_n=1):
@@ -150,7 +153,7 @@ def main(opt):
     writer.cleanup()
 
     print("Inference is complete, zipping up your dataset...")
-    shutil.make_archive('lumine_autolabel_out', 'zip', writer.root)
+    shutil.make_archive("lumine_autolabel_out", "zip", writer.root)
 
     print("Done! Select YOLO 1.1 as the format when importing into cvat.")
     exit(0)

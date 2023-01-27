@@ -64,10 +64,12 @@ def detect(opt):
         print("Unknown error parsing source")
         exit(1)
 
+    camera_res = (720, 960)
+
     if source_type == "webcam":
         # 1280x960 max res for C310
         # cap = camera.CameraCtl(source, (960, 1280), 30)
-        cap = camera.CameraCtl(source, (480, 640), 30)
+        cap = camera.CameraCtl(source, camera_res, 30, opt.gain, opt.exposure)
 
     cond = threading.Condition()
     lumine_table = None
@@ -75,7 +77,14 @@ def detect(opt):
         # Don't import if the option is false to avoid needing this dep for development.
         import nt_formatter
 
-        lumine_table = nt_formatter.NtFormatter(opt.nt, nt_server_override="127.0.0.1")
+        lumine_table = nt_formatter.NtFormatter(opt.nt)
+
+    stream = None
+    if opt.stream:
+        print(opt.stream)
+        import cscore_stream
+
+        stream = cscore_stream.CsCoreStream((240, 320), opt.stream, fps=15)
 
     detectors = get_detectors(opt)
 
@@ -107,7 +116,12 @@ def detect(opt):
 
             with_boxes = draw.draw(frame, all_dets)
             # with_boxes = draw.draw_sort(frame, trackers)
-            cv2.imshow("detector", with_boxes)
+
+            if not opt.no_draw:
+                cv2.imshow("detector", with_boxes)
+
+            if opt.stream:
+                stream.write_frame(with_boxes)
 
             t_end = time.time()
 
@@ -185,9 +199,17 @@ def main():
         "--table", action="store_true", help="Print the detection table."
     )
     parser.add_argument(
+        "--no-draw", action="store_true", help="Disable drawing to a window."
+    )
+    parser.add_argument(
         "--nt",
         type=str,
         help="Enable network tables client for the given team number.",
+    )
+    parser.add_argument(
+        "--stream",
+        type=int,
+        help="Port to start cscore on.",
     )
 
     opt = parser.parse_args()
