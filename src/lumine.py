@@ -117,7 +117,7 @@ def detect(opt):
             with_boxes = draw.draw(frame, all_dets)
             # with_boxes = draw.draw_sort(frame, trackers)
 
-            if not opt.no_draw:
+            if opt.draw:
                 cv2.imshow("detector", with_boxes)
 
             if opt.stream:
@@ -154,6 +154,25 @@ def main():
         help="Media source, anything supported by video capture",
     )
     parser.add_argument(
+        "--weights", type=str, default="yolov5s.pt", help="Path to YOLO weights file"
+    )
+    parser.add_argument(
+        "--table", action="store_true", help="Print the detection table."
+    )
+    parser.add_argument(
+        "--draw", action="store_true", help="Draw the augmented feed to a window."
+    )
+    parser.add_argument(
+        "--nt",
+        type=str,
+        help="Enable network tables client for the given team number.",
+    )
+    parser.add_argument(
+        "--stream",
+        type=int,
+        help="Port to start cscore on.",
+    )
+    parser.add_argument(
         "--gain", type=int, default=150, help="Gain to configure with v4l2-ctl"
     )
     parser.add_argument(
@@ -167,9 +186,6 @@ def main():
     )
     parser.add_argument(
         "--tag_size", type=float, default=1.0, help="Apriltag size in meters"
-    )
-    parser.add_argument(
-        "--weights", type=str, default="yolov5s.pt", help="Path to YOLO weights file"
     )
     parser.add_argument(
         "--max_age",
@@ -194,22 +210,6 @@ def main():
         type=float,
         default=0.50,
         help="Confidence threshold for processing a detect.",
-    )
-    parser.add_argument(
-        "--table", action="store_true", help="Print the detection table."
-    )
-    parser.add_argument(
-        "--no-draw", action="store_true", help="Disable drawing to a window."
-    )
-    parser.add_argument(
-        "--nt",
-        type=str,
-        help="Enable network tables client for the given team number.",
-    )
-    parser.add_argument(
-        "--stream",
-        type=int,
-        help="Port to start cscore on.",
     )
 
     opt = parser.parse_args()

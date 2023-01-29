@@ -6,12 +6,12 @@ sudo apt install -y \
     python3-numpy \
     python3-scipy \
     python3-matplotlib \
-    python3-opencv \
     python3-skimage \
     python3-torch \
     python3-torchvision \
     python3-prettytable \
     v4l-utils
+    # python3-opencv
 
 # TODO would be required for appsrc streamer.
 # sudo apt install -y \
@@ -24,9 +24,8 @@ sudo apt install -y \
 virtualenv lumine-venv --system-site-packages
 source lumine-venv/bin/activate
 
-# Intel OpenVINO for AVX512 or IGP inference
 export MAKEFLAGS="-j$(nproc)"
-pip install openvino openvino-dev filterpy lap
+pip install openvino openvino-dev filterpy lap black
 
 # robotpy's libraries
 pip install pynetworktables "robotpy[all]"

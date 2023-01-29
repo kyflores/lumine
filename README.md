@@ -9,6 +9,15 @@ bash install.sh
 `install.sh` installs everything it can from apt, creates a venv that
 uses system packages, then adds a few python packages that aren't in apt repos.
 
+## Example Launch
+```
+python lumine.py --weights /path/to/openvino/weights/folder --source 0 --table --stream 5800 --draw
+```
+
+`weights`: Path to a folder containing openvino .bin, .xml, .mapping files
+`source`: A name that can be passed to cv2.VideoCapture. Numbers refer to  /dev/videoX devices
+`table`: Draw an ASCII table of the detection results
+
 ## Embedded Hardware Support (goals)
 * CPU, with pytorch and OpenVINO backends.
 * Intel IGPs with OpenVINO
@@ -54,7 +63,7 @@ Pass `-C` instead of `-c` to read a property instead of set it.
 ```
 v4l2-ctl --list-devices # Find your /dev/videoX number
 v4l2-ctl --all -d device # Show all configuration properties
-v4l2-ctl -d 3 -c auto_exposure=1
+v4l2-ctl -d 3 -c exposure_auto=1
 v4l2-ctl -d 3 -c gain=200
 v4l2-ctl -d 3 -c exposure_time_absolute=250
 ```
@@ -97,11 +106,14 @@ with minimal effort.
 
 To get the model into float16 format:
 ```
-python export.py --weights yolov5s.pt --include onnx
+python export.py --weights /path/to/your/weights.pt --include onnx --opset 12
 
 # mo is installed with the openvino-dev package.
-mo --input_model yolov5s.onnx --data_type FP16
+mo --input_model /path/to/your/weights.onnx --data_type FP16
 ```
+
+OpenVINO produces a `.xml, .bin, and .mapping` file from your model, which should be put
+in its own folder. Then, passing the path to the folder to `--weights` when calling lumine.
 
 YoloV7 should use
 ```
