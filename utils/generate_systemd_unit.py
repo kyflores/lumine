@@ -2,12 +2,16 @@
 
 import os
 
+# We hide stdout so that we don't get spammed by this error message
+# "Corrupt JPEG data: 1 extraneous bytes before marker 0xd3"
+# It seems to only happen on logitech webcams and doesn't affect the image.
 UNIT_FILE = """
 [Unit]
 Description=Lumine Inference Service
 
 [Service]
 Type=simple
+StandardOutput=null
 ExecStart=bash {lumine_root}/start.sh
 EnvironmentFile={lumine_root}/config/lumine.conf
 

@@ -92,12 +92,12 @@ def detect(opt):
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         while True:
+            t_begin = time.time()
             err, frame = cap.read()
             if not err:
                 print("Media source didn't produce frame, stopping...")
                 break
 
-            t_begin = time.time()
 
             # Note: This uses a threadpool executor to start each detection
             # concurrently. Despite GIL, this should still improve performance
@@ -123,6 +123,13 @@ def detect(opt):
             if opt.stream:
                 stream.write_frame(with_boxes)
 
+            # Updated network tables if it was enabled..
+            if lumine_table is not None:
+                y_res = executor.submit(lumine_table.update_yolo, all_dets)
+                a_res = executor.submit(lumine_table.update_apriltags_rpy, all_dets)
+                a_res.result()
+                y_res.result()
+
             t_end = time.time()
 
             # Print out the formatted ASCII table if it was requested.
@@ -133,12 +140,6 @@ def detect(opt):
                 print("Took {:.2f} ms, {:.2f} iter/sec".format(ms, fps))
                 print(common.detections_as_table(all_dets))
 
-            # Updated network tables if it was enabled..
-            if lumine_table is not None:
-                y_res = executor.submit(lumine_table.update_yolo, all_dets)
-                a_res = executor.submit(lumine_table.update_apriltags_rpy, all_dets)
-                a_res.result()
-                y_res.result()
 
             if cv2.pollKey() > -1:
                 cv2.destroyAllWindows()

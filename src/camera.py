@@ -44,6 +44,9 @@ class CameraCtl:
         self.cal = cal
 
         self.cap = cv2.VideoCapture(devnum, cv2.CAP_V4L2)
+
+        # Need to select mjpeg mode to select higher framerates in higher resolution modes
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M','J','P','G'))
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(dimensions[0]))
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(dimensions[1]))
         self.cap.set(cv2.CAP_PROP_FPS, int(fps))

@@ -3,7 +3,6 @@
 import ntcore
 import time
 import cv2
-import threading
 
 
 class NtcoreFormatter:
