@@ -21,8 +21,11 @@ sudo apt install -y \
 #     gstreamer1.0-plugins-bad \
 #     gstreamer1.0-plugins-ugly
 
+LUMINE_ROOT=$(dirname ${0})
+
 virtualenv lumine-venv --system-site-packages
-source lumine-venv/bin/activate
+source ${LUMINE_ROOT}/lumine-venv/bin/activate
+
 
 export MAKEFLAGS="-j$(nproc)"
 pip install openvino openvino-dev filterpy lap black
@@ -30,3 +33,18 @@ pip install openvino openvino-dev filterpy lap black
 # robotpy's libraries
 pip install pynetworktables "robotpy[all]"
 
+# Patch sort.py
+sed -i "/matplotlib.use('TkAgg')/c\# matplotlib.use('TkAgg')" \
+    ${LUMINE_ROOT}/src/subprojects/sort/sort.py 
+
+# Add the service file.
+python ${LUMINE_ROOT}/utils/generate_systemd_unit.py
+sudo cp ${LUMINE_ROOT}/lumine.service /etc/systemd/system/
+sudo systemctl daemon-reload
+
+echo "===================================================================="
+echo ""
+echo "Installation complete! Configure lumine by edting config/lumine.conf"
+echo "Use sudo \"systemctl enable lumine.service\" to start at boot."
+echo ""
+echo "===================================================================="

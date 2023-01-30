@@ -182,7 +182,7 @@ def main():
         help="Exposure time to configure with v4l2-ctl",
     )
     parser.add_argument(
-        "--tag_family", type=str, default="tag36h11", help="Apriltag family"
+        "--tag_family", type=str, default="tag16h5", help="Apriltag family"
     )
     parser.add_argument(
         "--tag_size", type=float, default=1.0, help="Apriltag size in meters"

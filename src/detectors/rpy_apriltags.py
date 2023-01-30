@@ -40,7 +40,7 @@ class RobotpyAprilTagDetector:
 
         self.det = rtag.AprilTagDetector()
         self.det.setConfig(self.cfg)
-        self.det.addFamily("tag16h5", 0)
+        self.det.addFamily(tag_family, 0)
 
         self.pose = rtag.AprilTagPoseEstimator(self.posecfg)
 
