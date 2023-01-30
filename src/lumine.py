@@ -75,9 +75,9 @@ def detect(opt):
     lumine_table = None
     if opt.nt:
         # Don't import if the option is false to avoid needing this dep for development.
-        import nt_formatter
+        import ntcore_formatter
 
-        lumine_table = nt_formatter.NtFormatter(opt.nt)
+        lumine_table = ntcore_formatter.NtcoreFormatter(opt.nt)
 
     stream = None
     if opt.stream:
