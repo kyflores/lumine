@@ -19,15 +19,13 @@ EnvironmentFile={lumine_root}/config/lumine.conf
 WantedBy=multi-user.target
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     curdur = os.getcwd()
-    formats = {
-        "lumine_root": curdur
-    }
+    formats = {"lumine_root": curdur}
 
     unit_file = UNIT_FILE.format(**formats)
 
-    with open('lumine.service', 'w') as service:
+    with open("lumine.service", "w") as service:
         service.write(unit_file)
-    
+
     exit(0)

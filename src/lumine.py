@@ -98,7 +98,6 @@ def detect(opt):
                 print("Media source didn't produce frame, stopping...")
                 break
 
-
             # Note: This uses a threadpool executor to start each detection
             # concurrently. Despite GIL, this should still improve performance
             # because it will at least allow us to do other work like apriltags
@@ -139,7 +138,6 @@ def detect(opt):
                 fps = 1 / (t_end - t_begin)
                 print("Took {:.2f} ms, {:.2f} iter/sec".format(ms, fps))
                 print(common.detections_as_table(all_dets))
-
 
             if cv2.pollKey() > -1:
                 cv2.destroyAllWindows()

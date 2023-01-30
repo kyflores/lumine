@@ -4,6 +4,8 @@ import ntcore
 import cscore
 import cv2
 import time
+import socket
+
 
 class CsCoreStream:
     def __init__(self, shape, port, fps=30):
@@ -16,13 +18,21 @@ class CsCoreStream:
         self.srv = cscore.MjpegServer("lumine_srv", int(port))
         self.srv.setSource(self.src)
         self.nt = ntcore.NetworkTableInstance.getDefault()
-        self.stream_uri = self.nt.getTable("CameraPublisher/lumine").getStringArrayTopic("streams").publish()
+        self.stream_uri = (
+            self.nt.getTable("CameraPublisher/lumine")
+            .getStringArrayTopic("streams")
+            .publish()
+        )
 
-        # TODO
-        self.stream_uri.set(["mjpeg:http://192.168.17.172:{}/?action=stream".format(port)])
+        self.stream_uri.set(
+            [
+                "mjpeg:http://{}:{}/?action=stream".format(
+                    socket.gethostbyname(socket.gethostname()), port
+                )
+            ]
+        )
 
         self.last = time.time()
-        
 
     def write_frame(self, fr):
         rows, cols, channels = fr.shape
@@ -30,8 +40,8 @@ class CsCoreStream:
 
         if (rows != self.rows) or (cols != self.cols):
             fr = cv2.resize(fr, (self.cols, self.rows))
-        
+
         self.src.putFrame(fr)
-        
+
     # TODO, need to release the stream?
     # def destroy
