@@ -41,6 +41,7 @@ class YoloV5OpenVinoDetector:
 
     def detect(self, im):  # img is a np array
         im, self.scale = yc.resize_to_frame(im)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         blob = cv2.dnn.blobFromImage(
             im,
             1.0 / 255,

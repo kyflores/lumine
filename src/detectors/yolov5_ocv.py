@@ -41,6 +41,7 @@ class YoloV5OpenCVDetector:
 
     def detect(self, img):
         img, self.scale = yc.resize_to_frame(img)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         blob = cv2.dnn.blobFromImage(
             img,
             1.0 / 255,

@@ -14,6 +14,7 @@ class YoloV5TorchDetector:
         self.det = torch.hub.load(yc.YOLOV5_PATH, "custom", weights, source="local")
 
     def detect(self, img):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         detects = self.det.forward(img).xyxy[0].cpu().numpy()
         res = []
         for d in detects:
