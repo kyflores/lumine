@@ -84,7 +84,7 @@ def detect(opt):
         print(opt.stream)
         import cscore_stream
 
-        stream = cscore_stream.CsCoreStream((240, 320), opt.stream, fps=15)
+        stream = cscore_stream.CsCoreStream((240, 320), opt.ip, opt.stream, fps=15)
 
     detectors = get_detectors(opt)
 
@@ -146,6 +146,8 @@ def detect(opt):
 
 def main():
     parser = argparse.ArgumentParser()
+
+    # Import arguments for basic operation.
     parser.add_argument(
         "--source",
         type=str,
@@ -167,10 +169,19 @@ def main():
         help="Enable network tables client for the given team number.",
     )
     parser.add_argument(
+        "--ip",
+        type=str,
+        default="127.0.0.1",
+        help="IP of the interface facing the robot.",
+    )
+    parser.add_argument(
         "--stream",
         type=int,
+        default=5800,
         help="Port to start cscore on.",
     )
+
+    # Secondary arguments concered with tuning.
     parser.add_argument(
         "--gain", type=int, default=150, help="Gain to configure with v4l2-ctl"
     )
