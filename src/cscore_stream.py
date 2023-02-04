@@ -8,7 +8,7 @@ import socket
 
 
 class CsCoreStream:
-    def __init__(self, shape, port, fps=30):
+    def __init__(self, shape, ip, port, fps=30):
         assert len(shape) == 2
         print("Setting up Cscore")
         self.rows, self.cols = shape
@@ -24,13 +24,7 @@ class CsCoreStream:
             .publish()
         )
 
-        self.stream_uri.set(
-            [
-                "mjpeg:http://{}:{}/?action=stream".format(
-                    socket.gethostbyname(socket.gethostname()), port
-                )
-            ]
-        )
+        self.stream_uri.set(["mjpeg:http://{}:{}/?action=stream".format(ip, port)])
 
         self.last = time.time()
 

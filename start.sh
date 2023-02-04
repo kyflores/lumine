@@ -6,7 +6,7 @@ python "${LUMINE_ROOT}"/src/lumine.py \
     --weights ${WEIGHTS} \
     --source ${SOURCE} \
     --stream ${CSCOREPORT} \
-    --nt ${NTSERVER} 
-    # TODO
-    #--gain 200 \
-    #--exposure 200
+    --nt ${NTSERVER}
+    --gain ${GAIN} \
+    --exposure ${EXPOSURE}
+    --ip ${IP}
