@@ -9,6 +9,7 @@ import os
 import sys
 import numpy as np
 
+
 def resize_to_frame(imraw, dim):
     major_dim = np.max(imraw.shape)
     scale = dim / major_dim
@@ -18,12 +19,13 @@ def resize_to_frame(imraw, dim):
     img[: imraw.shape[0], : imraw.shape[1], :] = imraw
     return img, outscale
 
+
 def main(datadir, target_size):
     os.makedirs("classifier_dataset", exist_ok=True)
     imgdir = os.path.join(datadir, "images")
     lbldir = os.path.join(datadir, "labels")
 
-    count = 0;
+    count = 0
     label_files = os.listdir(lbldir)
     for lbl in label_files:
         base = os.path.basename(lbl)
@@ -33,9 +35,9 @@ def main(datadir, target_size):
         (rows, cols, channels) = img.shape
 
         boxes = []
-        with open(os.path.join(lbldir,lbl), 'r') as lf:
+        with open(os.path.join(lbldir, lbl), "r") as lf:
             for line in lf:
-                vals = line.split(' ')
+                vals = line.split(" ")
 
                 x = float(vals[1]) * cols
                 y = float(vals[2]) * rows
@@ -47,28 +49,29 @@ def main(datadir, target_size):
                 ymin = int(y - h // 2)
                 ymax = int(y + h // 2)
 
-                boxes.append({
-                    "cls": int(vals[0]),
-                    "xmin": xmin,
-                    "xmax": xmax,
-                    "ymin": ymin,
-                    "ymax": ymax
-                })
+                boxes.append(
+                    {
+                        "cls": int(vals[0]),
+                        "xmin": xmin,
+                        "xmax": xmax,
+                        "ymin": ymin,
+                        "ymax": ymax,
+                    }
+                )
 
         for box in boxes:
             imgname = os.path.join(
                 "classifier_dataset",
-                "{}_{}.PNG".format(box["cls"], str(count).zfill(6))
+                "{}_{}.PNG".format(box["cls"], str(count).zfill(6)),
             )
-            im = img[box["ymin"]:box["ymax"], box["xmin"]:box["xmax"], :]
+            im = img[box["ymin"] : box["ymax"], box["xmin"] : box["xmax"], :]
             rsz, _ = resize_to_frame(im, target_size)
             cv2.imwrite(imgname, rsz)
 
             count += 1
 
 
-
-if __name__ == '__main__':
-    target = 28 # 28x28 is mnist default dimensions.
+if __name__ == "__main__":
+    target = 28  # 28x28 is mnist default dimensions.
     datadir = sys.argv[1]
     main(datadir, target)

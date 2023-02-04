@@ -134,4 +134,6 @@ dmypy.json
 *.bin
 *.xml
 *.mapping
+
+lumine-venv/
 lumine.service

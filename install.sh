@@ -5,12 +5,11 @@ sudo apt install -y \
     python3-virtualenv \
     python3-numpy \
     python3-scipy \
-    python3-matplotlib \
-    python3-skimage \
     python3-torch \
     python3-torchvision \
     python3-prettytable \
     v4l-utils
+    # qt5dxcb-plugin
     # python3-opencv
 
 # TODO would be required for appsrc streamer.
@@ -32,10 +31,6 @@ pip install openvino openvino-dev filterpy lap black
 
 # robotpy's libraries
 pip install pynetworktables "robotpy[all]"
-
-# Patch sort.py
-sed -i "/matplotlib.use('TkAgg')/c\# matplotlib.use('TkAgg')" \
-    ${LUMINE_ROOT}/src/subprojects/sort/sort.py 
 
 # Add the service file.
 python ${LUMINE_ROOT}/utils/generate_systemd_unit.py
