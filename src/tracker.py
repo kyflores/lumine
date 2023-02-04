@@ -38,8 +38,34 @@ class Sort:
         # The index of the max IOU is the index in the sort result that
         # best matches that particular index in the detection result.
         mins = torch.argmax(ious, dim=1)
+
+        used_boxes = set()
         for ix, m in enumerate(mins):
             dets[ix]["sort_id"] = int(trackers[m][-1])
+            used_boxes.update([m.item()])
+
+        # For each tracker that wasn't assigned to a box by IOU matching,
+        # Draw a ghost box to indicate an expected target.
+        all_trackers = set(np.arange(trackers.shape[0]))
+        ghost_boxes = all_trackers - used_boxes
+        for box in ghost_boxes:
+            xmin, ymin, xmax, ymax = trackers[box][:4]
+            dets.append(
+                {
+                    "type": "sort_occluded",
+                    "id": "none",
+                    "color": (128, 128, 128),
+                    "confidence": 1,
+                    "sort_id": -9,
+                    "corners": np.array(
+                        [[xmin, ymin],
+                         [xmin, ymax],
+                         [xmax, ymax,],
+                         [xmax, ymin]]
+                    )
+                }
+            )
+
 
     def update(self, detects):
         sort_dets = [cc2sort(d["corners"], d["confidence"]) for d in detects]
@@ -48,10 +74,16 @@ class Sort:
         else:
             sort_dets = np.stack(sort_dets)
 
-        self.trackers = self.sort_tracker.update(sort_dets)
+        # Match mapping is a Nx2, like
+        # [[0 1]
+        #  [1 0]
+        #  [2 2]]
+        # Where pairs map input detection indicies to tracker output indicies.
+        self.trackers, match_mapping = self.sort_tracker.update(sort_dets)
 
         # Mutates `detects`, we return it again for convenience.
-        if self.trackers.shape[0] > 0:
+        if (self.trackers.shape[0] > 0) and (len(detects) > 0):
+            # Assign box ID according to best IOU
             self.map_to_sort_id(detects, self.trackers)
 
         return detects
