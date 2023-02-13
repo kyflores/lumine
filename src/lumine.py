@@ -34,7 +34,9 @@ def get_detectors(opt):
 
     from detectors import yolov5_openvino as yolo_ov
 
-    detectors.append(yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO"))
+    detectors.append(
+        yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=320)
+    )
 
     # from detectors import dummy
     # detectors.append(dummy.DummyDetector())
@@ -64,11 +66,12 @@ def detect(opt):
         print("Unknown error parsing source")
         exit(1)
 
-    camera_res = (720, 960)
+    # camera_res = (720, 960)
+
+    # 1280x960 max res for C310
+    camera_res = (960, 1280)
 
     if source_type == "webcam":
-        # 1280x960 max res for C310
-        # cap = camera.CameraCtl(source, (960, 1280), 30)
         cap = camera.CameraCtl(source, camera_res, 30, opt.gain, opt.exposure)
 
     cond = threading.Condition()
@@ -117,7 +120,13 @@ def detect(opt):
             # with_boxes = draw.draw_sort(frame, trackers)
 
             if opt.draw:
-                cv2.imshow("detector", with_boxes)
+                if opt.heatmap:
+                    im = cv2.cvtColor(with_boxes, cv2.COLOR_BGR2GRAY)
+                    im = cv2.equalizeHist(im)
+                    im = cv2.applyColorMap(im, cv2.COLORMAP_PLASMA)
+                    cv2.imshow("detector", im)
+                else:
+                    cv2.imshow("detector", with_boxes)
 
             if opt.stream:
                 stream.write_frame(with_boxes)
@@ -177,7 +186,6 @@ def main():
     parser.add_argument(
         "--stream",
         type=int,
-        default=5800,
         help="Port to start cscore on.",
     )
 
@@ -220,6 +228,11 @@ def main():
         type=float,
         default=0.50,
         help="Confidence threshold for processing a detect.",
+    )
+    parser.add_argument(
+        "--heatmap",
+        action="store_true",
+        help="Draw the display like a heatmap. For looks only.",
     )
 
     opt = parser.parse_args()

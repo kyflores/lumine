@@ -104,12 +104,13 @@ def xywh2owh(x):
 
 # Squeeze the image into 640x640. If the image is nonsquare, the image is padded
 # to 640^2 such that the corner near the origin is always filled.
-def resize_to_frame(imraw):
+def resize_to_frame(imraw, dim=640):
     major_dim = np.max(imraw.shape)
-    scale = 640 / major_dim
+    scale = dim / major_dim
     outscale = 1 / scale
     imraw = cv2.resize(imraw, None, fx=scale, fy=scale)
-    img = np.zeros((640, 640, 3), dtype=imraw.dtype)
+    img = np.empty((dim, dim, 3), dtype=imraw.dtype)
+    img.fill(114)
     img[: imraw.shape[0], : imraw.shape[1], :] = imraw
     return img, outscale
 

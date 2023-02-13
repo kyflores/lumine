@@ -25,7 +25,6 @@ LUMINE_ROOT=$(dirname ${0})
 virtualenv lumine-venv --system-site-packages
 source ${LUMINE_ROOT}/lumine-venv/bin/activate
 
-
 export MAKEFLAGS="-j$(nproc)"
 pip install openvino openvino-dev filterpy lap black
 

@@ -7,7 +7,10 @@ from openvino.runtime import Core, Layout, get_batch
 
 
 class YoloV5OpenVinoDetector:
-    def __init__(self, openvino_dir, classes=yc.YOLOV5_CLASSES, backend="AUTO"):
+    def __init__(
+        self, openvino_dir, classes=yc.YOLOV5_CLASSES, backend="AUTO", dim=640
+    ):
+        self.dim = dim
         model = None
         weights = None
         meta = None
@@ -40,7 +43,7 @@ class YoloV5OpenVinoDetector:
         )
 
     def detect(self, im):  # img is a np array
-        im, self.scale = yc.resize_to_frame(im)
+        im, self.scale = yc.resize_to_frame(im, self.dim)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         blob = cv2.dnn.blobFromImage(
             im,
@@ -59,7 +62,7 @@ class YoloV5OpenVinoDetector:
         for idx in nms_res:
             conf = confidences[idx]
             classnm = class_ids[idx]
-            x, y, w, h = np.clip(boxes[idx], 0, 640).astype(np.uint32)
+            x, y, w, h = np.clip(boxes[idx], 0, self.dim).astype(np.uint32)
             d = (x, y, x + w, y + h)  # xyxy format
             corners = np.array(((d[0], d[1]), (d[0], d[3]), (d[2], d[3]), (d[2], d[1])))
 
@@ -68,7 +71,7 @@ class YoloV5OpenVinoDetector:
                     "type": "yolov5",
                     # "id": self.classes[classnm], # Numbers are more convenient for NT.
                     "id": classnm,
-                    "color": (0, 255, 0),
+                    "color": (0, 0, 255),
                     "corners": corners * self.scale,
                     "confidence": conf,
                 }
