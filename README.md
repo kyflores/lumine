@@ -120,6 +120,11 @@ YoloV7 should use
 python export.py --weights yolov7.pt --simplify --grid --topk-all 100 --iou-thres 0.65 --conf-thres 0.35 --img-size 640 640 --max-wh 640
 ```
 
+YoloV8 can be easily exported by the Ultralytics command line util
+```
+yolo export model=yolov8n.pt format=openvino half=true
+```
+
 TODO
 OpenVINO can also quantize models to int8 but this format is mainly for the benefit of the CPU
 plugin. Int8 is unsupported on Intel IGPs.

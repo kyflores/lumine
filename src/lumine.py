@@ -4,7 +4,6 @@ import time
 import concurrent.futures
 import threading
 
-import torch
 import numpy as np
 import cv2
 
@@ -32,10 +31,14 @@ def get_detectors(opt):
     # from detectors import yolov5 as yolo
     # detectors.append(yolo.YoloV5TorchDetector(opt.weights))
 
-    from detectors import yolov5_openvino as yolo_ov
+    # from detectors import yolov5_openvino as yolo_ov
+    # detectors.append(
+    #     yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=320)
+    # )
 
+    from detectors import yolov8_openvino as yolov8_ov
     detectors.append(
-        yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=320)
+        yolov8_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=640)
     )
 
     # from detectors import dummy
