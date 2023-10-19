@@ -92,7 +92,7 @@ def detect(opt):
         print(opt.stream)
         import cscore_stream
 
-        stream = cscore_stream.CsCoreStream((240, 320), opt.ip, opt.stream, fps=15)
+        stream = cscore_stream.CsCoreStream((240, 320), opt.iface, opt.stream, fps=15)
 
     detectors = get_detectors(opt)
 
@@ -166,7 +166,7 @@ def main():
         "--source",
         type=str,
         default=0,
-        help="Media source, anything supported by video capture",
+        help="Media source, anything supported by OpenCV's video capture",
     )
     parser.add_argument(
         "--weights", type=str, default="yolov5s.pt", help="Path to YOLO weights file"
@@ -180,13 +180,13 @@ def main():
     parser.add_argument(
         "--nt",
         type=str,
-        help="Enable network tables client for the given team number.",
+        help="IP of the network tables server. If it's a team number, will be automatically set to 10.TE.AM.2, else will be parsed as a full IP.",
     )
     parser.add_argument(
-        "--ip",
+        "--iface",
         type=str,
-        default="127.0.0.1",
-        help="IP of the interface facing the robot.",
+        default="eth0",
+        help="Name of the interface connected to the robot. It will be something like eth0, en0, enps0. Lumine will use the first IPv4 addr on this interface.",
     )
     parser.add_argument(
         "--stream",

@@ -4,13 +4,23 @@ import ntcore
 import cscore
 import cv2
 import time
+import netifaces
 import socket
 
 
+# Find the IPv4 addr of the specified interface.
+# Assumes there's only one address on the interface.
+def get_ip_of_interface(iface):
+    addrs = netifaces.ifaddresses(iface)
+    return addrs[netifaces.AF_INET][0]["addr"]
+
+
 class CsCoreStream:
-    def __init__(self, shape, ip, port, fps=30):
+    def __init__(self, shape, iface, port, fps=30):
         assert len(shape) == 2
         print("Setting up Cscore")
+
+        ip = get_ip_of_interface(iface)
         self.rows, self.cols = shape
         self.src = cscore.CvSource(
             "lumine_src", cscore.VideoMode.PixelFormat.kMJPEG, self.cols, self.rows, fps

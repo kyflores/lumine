@@ -50,7 +50,6 @@ if __name__ == "__main__":
     im0 = None
     im1 = None
     for ix in range(NUM_FRAMES):
-
         # Reopen the camera on each loop iteration. Opening it once
         # and trying to repeatedly read() seems to pull from a buffer of images,
         # the image it returns was clearly not captured at that moment.
