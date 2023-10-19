@@ -9,6 +9,8 @@ bash install.sh
 `install.sh` installs everything it can from apt, creates a venv that
 uses system packages, then adds a few python packages that aren't in apt repos.
 
+Try `conda install -c conda-forge gcc=12.1.0` if you get an error about GLIBCXX_3.4.30
+
 ## Example Launch
 ```
 python lumine.py --weights /path/to/openvino/weights/folder --source 0 --table --stream 5800 --draw
@@ -21,7 +23,6 @@ python lumine.py --weights /path/to/openvino/weights/folder --source 0 --table -
 ## Embedded Hardware Support (goals)
 * CPU, with pytorch and OpenVINO backends.
 * Intel IGPs with OpenVINO
-* (eventually) NVIDIA Jetson with TensorRT model conversion
 
 ## Custom detectors
 All detectors should support a `detect(img) -> list(dict)` function.
@@ -115,26 +116,14 @@ mo --input_model /path/to/your/weights.onnx --data_type FP16
 OpenVINO produces a `.xml, .bin, and .mapping` file from your model, which should be put
 in its own folder. Then, passing the path to the folder to `--weights` when calling lumine.
 
-YoloV7 should use
-```
-python export.py --weights yolov7.pt --simplify --grid --topk-all 100 --iou-thres 0.65 --conf-thres 0.35 --img-size 640 640 --max-wh 640
-```
-
-YoloV8 can be easily exported by the Ultralytics command line util
+YoloV8 can be easily exported to OpenVINO weights by the Ultralytics command line util.
 ```
 yolo export model=yolov8n.pt format=openvino half=true
 ```
 
-TODO
-OpenVINO can also quantize models to int8 but this format is mainly for the benefit of the CPU
-plugin. Int8 is unsupported on Intel IGPs.
-
-## Prepping TensorRT models
-TODO, only support DGPU and JP 5.0+
-
 ## Retraining Models
 Lumine aims to offer some choice of object detection model, depending on the coprocessor in use.
-The YoloV5 or YoloV7 families will be the first choice for powerful coprocessors
+The YoloV5 or YoloV8 families will be the first choice for powerful coprocessors
 that provide acceleration hardware like NVIDIA Jetson or Intel Iris Xe. More limited systems
 can benefit from a lighter model like NanoDet.
 
@@ -147,10 +136,6 @@ in the free-tier.
 ### YOLO
 Retraining YOLO is quite easy thanks to how complete the Ultralytics solution is.
 Start by exporting to the YOLO 1.1 format in CVAT.
-TODO
-
-### NanoDet
-Start by exporting to the COCO format in CVAT.
 TODO
 
 ### Autolabeling
