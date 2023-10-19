@@ -1,6 +1,7 @@
 import cv2
 import subprocess
 
+
 # I recommend that you set the camera to the highest frame rate that yields
 # an acceptable exposure.
 #

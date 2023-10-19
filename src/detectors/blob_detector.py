@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 # This...exists. But it's not terribly useful in any lighting conditions
 # except what it's tuned for. At best this detector plugin is a starting point
 # for implementing retroreflective target tracking.

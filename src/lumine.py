@@ -14,6 +14,7 @@ import tracker as trk
 import draw
 import camera
 
+
 # Initialize detectors here. Everything in this list must implement the detect function
 # detailed in the readme and return a list of dictionaries with the right keys.
 def get_detectors(opt):
@@ -37,6 +38,7 @@ def get_detectors(opt):
     # )
 
     from detectors import yolov8_openvino as yolov8_ov
+
     detectors.append(
         yolov8_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=640)
     )

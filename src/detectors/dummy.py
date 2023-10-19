@@ -1,5 +1,6 @@
 import numpy as np
 
+
 # Dummy detector class that demonstrates the minimal detector API
 # Draws a box that marches diagonally across the frame one pixel at a time.
 class DummyDetector:

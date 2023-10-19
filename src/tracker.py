@@ -4,6 +4,7 @@ import cv2
 import torchvision.ops as ops
 import subprojects.sort.sort as sort
 
+
 # Corners and confidence to SORT (1,5) format.
 # SORT wants [x,y,x,y,conf]
 def cc2sort(corners, confidence):

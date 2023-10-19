@@ -8,10 +8,12 @@ from openvino.runtime import Core, Layout, get_batch
 _NMS_THRESH = 0.45
 _SCORE_THRESH = 0.25
 
+
 def into2owh_v8(x):
     x[0, :] = x[0, :] - x[2, :] / 2  # x origin
     x[1, :] = x[1, :] - x[3, :] / 2  # y origin
     return x
+
 
 # (1, 84, 8400)
 def process_yolov8_output_tensor(tensor):
@@ -20,7 +22,6 @@ def process_yolov8_output_tensor(tensor):
 
     # Now (84, 8400)
     best_score = np.max(tensor[4:, :], axis=0)
-    print("Best score shape", best_score.shape)
     class_ids = np.argmax(tensor[4:, :], axis=0)
     boxes = into2owh_v8(tensor[:4, :])
     boxes = np.moveaxis(boxes, 0, -1)
@@ -32,6 +33,7 @@ def process_yolov8_output_tensor(tensor):
         best_score,
         class_ids,
     )
+
 
 class YoloV5OpenVinoDetector:
     def __init__(

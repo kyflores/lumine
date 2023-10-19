@@ -95,6 +95,7 @@ YOLOV5_CLASSES = [
     "toothbrush",
 ]
 
+
 # owh is Origin, Width, Height. OpenCV uses this format
 def xywh2owh(x):
     x[:, 0] = x[:, 0] - x[:, 2] / 2  # x origin

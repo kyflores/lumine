@@ -58,7 +58,7 @@ class RobotpyAprilTagDetector:
 
             tag_id = d.getId()
             center = d.getCenter()
-            corners = np.array(d.getCorners([0] * 8)).reshape((4, 2)).astype(np.int)
+            corners = np.array(d.getCorners([0] * 8)).reshape((4, 2)).astype(np.int64)
 
             pose = self.pose.estimate(d)
             translation = pose.translation()

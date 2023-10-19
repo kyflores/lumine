@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import detectors.yolo_common as yc
 
+
 # Uses OpenCV dnn for inference. The model must be exported
 # to ONNX for this backend.
 #
