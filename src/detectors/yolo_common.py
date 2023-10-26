@@ -138,6 +138,36 @@ def process_yolo_output_tensor(tensor):
     )
 
 
+_NMS_THRESH = 0.45
+_SCORE_THRESH = 0.25
+
+
+def into2owh_v8(x):
+    x[0, :] = x[0, :] - x[2, :] / 2  # x origin
+    x[1, :] = x[1, :] - x[3, :] / 2  # y origin
+    return x
+
+
+# (1, 84, 8400)
+def process_yolov8_output_tensor(tensor):
+    print(tensor.shape)
+    tensor = tensor.squeeze()
+
+    # Now (84, 8400)
+    best_score = np.max(tensor[4:, :], axis=0)
+    class_ids = np.argmax(tensor[4:, :], axis=0)
+    boxes = into2owh_v8(tensor[:4, :])
+    boxes = np.moveaxis(boxes, 0, -1)
+    nms_res = cv2.dnn.NMSBoxes(boxes, best_score, _SCORE_THRESH, _NMS_THRESH)
+
+    return (
+        nms_res,
+        boxes,
+        best_score,
+        class_ids,
+    )
+
+
 # From ultrlytics/yolov5/utils/augmentations
 def letterbox(
     im,

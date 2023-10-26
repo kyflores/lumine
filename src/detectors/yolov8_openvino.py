@@ -5,37 +5,8 @@ import os
 
 from openvino.runtime import Core, Layout, get_batch
 
-_NMS_THRESH = 0.45
-_SCORE_THRESH = 0.25
 
-
-def into2owh_v8(x):
-    x[0, :] = x[0, :] - x[2, :] / 2  # x origin
-    x[1, :] = x[1, :] - x[3, :] / 2  # y origin
-    return x
-
-
-# (1, 84, 8400)
-def process_yolov8_output_tensor(tensor):
-    print(tensor.shape)
-    tensor = tensor.squeeze()
-
-    # Now (84, 8400)
-    best_score = np.max(tensor[4:, :], axis=0)
-    class_ids = np.argmax(tensor[4:, :], axis=0)
-    boxes = into2owh_v8(tensor[:4, :])
-    boxes = np.moveaxis(boxes, 0, -1)
-    nms_res = cv2.dnn.NMSBoxes(boxes, best_score, _SCORE_THRESH, _NMS_THRESH)
-
-    return (
-        nms_res,
-        boxes,
-        best_score,
-        class_ids,
-    )
-
-
-class YoloV5OpenVinoDetector:
+class YoloV8OpenVinoDetector:
     def __init__(
         self, openvino_dir, classes=yc.YOLOV5_CLASSES, backend="AUTO", dim=640
     ):
@@ -85,7 +56,7 @@ class YoloV5OpenVinoDetector:
 
         y = list(self.executable_network([blob]).values())
 
-        (nms_res, boxes, confidences, class_ids) = process_yolov8_output_tensor(y[0])
+        (nms_res, boxes, confidences, class_ids) = yc.process_yolov8_output_tensor(y[0])
 
         res = []
         for idx in nms_res:

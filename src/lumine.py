@@ -37,11 +37,18 @@ def get_detectors(opt):
     #     yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=320)
     # )
 
-    from detectors import yolov8_openvino as yolov8_ov
+    # from detectors import yolov8_openvino as yolov8_ov
+    # detectors.append(
+    #     yolov8_ov.YoloV8OpenVinoDetector(opt.weights, backend="AUTO", dim=640)
+    # )
 
-    detectors.append(
-        yolov8_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=640)
-    )
+    from detectors import yolov8_tvm
+
+    detectors.append(yolov8_tvm.YoloV8TvmDetector(opt.weights, target="vulkan", tuning_file='tune.json', dim=640))
+
+    # from detectors import yolov8_ncnn
+
+    # detectors.append(yolov8_ncnn.YoloV8NcnnDetector(opt.weights, dim=640))
 
     # from detectors import dummy
     # detectors.append(dummy.DummyDetector())
@@ -100,12 +107,12 @@ def detect(opt):
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         while True:
-            t_begin = time.time()
             err, frame = cap.read()
             if not err:
                 print("Media source didn't produce frame, stopping...")
                 break
 
+            t_begin = time.time()
             # Note: This uses a threadpool executor to start each detection
             # concurrently. Despite GIL, this should still improve performance
             # because it will at least allow us to do other work like apriltags

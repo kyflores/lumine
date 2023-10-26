@@ -9,4 +9,4 @@ python "${LUMINE_ROOT}"/src/lumine.py \
     --nt ${NTSERVER}
     --gain ${GAIN} \
     --exposure ${EXPOSURE}
-    --ip ${IP}
+    --iface ${iface}
