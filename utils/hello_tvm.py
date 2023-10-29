@@ -27,7 +27,8 @@ tvmc.tune(
     tuning_records=tune,
     # prior_records=tune,
     enable_autoscheduler=True,
-    trials=3000)
+    trials=3000,
+)
 package = tvmc.compile(model, target=target, tuning_records=tune)
 print("Running model with tuning ...")
 result = tvmc.run(package, device=target, benchmark=True, repeat=20)

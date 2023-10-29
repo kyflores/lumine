@@ -44,7 +44,11 @@ def get_detectors(opt):
 
     from detectors import yolov8_tvm
 
-    detectors.append(yolov8_tvm.YoloV8TvmDetector(opt.weights, target="vulkan", tuning_file='tune.json', dim=640))
+    detectors.append(
+        yolov8_tvm.YoloV8TvmDetector(
+            opt.weights, target="vulkan", tuning_file="tune.json", dim=640
+        )
+    )
 
     # from detectors import yolov8_ncnn
 

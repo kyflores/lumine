@@ -35,8 +35,12 @@ class YoloV8TvmDetector:
         print("Compiling model...")
         if tuning_file is not None:
             # with autotvm.apply_history_best(tuning_file):
-            with auto_scheduler.ApplyHistoryBest(tuning_file):
-                with tvm.transform.PassContext(opt_level=3, config={"relay.backend.use_auto_scheduler": True}):
+            with auto_scheduler.ApplyHistoryBest(
+                tuning_file
+            ):  # This is a different autotuning mode!
+                with tvm.transform.PassContext(
+                    opt_level=3, config={"relay.backend.use_auto_scheduler": True}
+                ):
                     self.lib = relay.build(
                         self.mod, target=self.target, params=self.params
                     )
@@ -44,7 +48,13 @@ class YoloV8TvmDetector:
             with tvm.transform.PassContext(opt_level=3):
                 self.lib = relay.build(self.mod, target=self.target, params=self.params)
 
-        self.device = tvm.device(self.target, 0)
+        if self.target.startswith("vulkan"):
+            device_name = "vulkan"
+        elif self.target.startswith("opencl"):
+            device_name = "cl"
+        elif self.target.startswith("llvm"):
+            device_name = "llvm"
+        self.device = tvm.device(device_name, 0)
         self.module = graph_executor.GraphModule(self.lib["default"](self.device))
 
     def detect(self, im):
