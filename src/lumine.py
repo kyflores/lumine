@@ -2,7 +2,7 @@ import os
 import argparse
 import time
 import concurrent.futures
-import threading
+import json
 
 import numpy as np
 import cv2
@@ -13,6 +13,10 @@ import common
 import tracker as trk
 import draw
 import camera
+
+
+class ConfigOpts(object):
+    pass
 
 
 # Initialize detectors here. Everything in this list must implement the detect function
@@ -26,18 +30,22 @@ def get_detectors(opt):
         atg.RobotpyAprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     )
 
-    # from detectors import yolov5_ocv as yolo_ocv
-    # detectors.append(yolo_ocv.YoloV5OpenCVDetector(opt.weights))
+    from detectors import yolov8_ocv as yolo_ocv
 
-    # from detectors import yolov5 as yolo
-    # detectors.append(yolo.YoloV5TorchDetector(opt.weights))
+    detectors.append(yolo_ocv.YoloV8OpenCVDetector(opt.weights))
+
+    from detectors import yolov8_ultralytics as yolo
+
+    detectors.append(yolo.YoloUltralyticsDetector(opt.weights))
 
     # from detectors import yolov5_openvino as yolo_ov
+
     # detectors.append(
     #     yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=320)
     # )
 
     # from detectors import yolov8_openvino as yolov8_ov
+
     # detectors.append(
     #     yolov8_ov.YoloV8OpenVinoDetector(opt.weights, backend="AUTO", dim=640)
     # )
@@ -46,13 +54,9 @@ def get_detectors(opt):
 
     detectors.append(
         yolov8_tvm.YoloV8TvmDetector(
-            opt.weights, target="vulkan", tuning_file="tune.json", dim=640
+            opt.weights, target="vulkan", tuning_file=None, dim=640
         )
     )
-
-    # from detectors import yolov8_ncnn
-
-    # detectors.append(yolov8_ncnn.YoloV8NcnnDetector(opt.weights, dim=640))
 
     # from detectors import dummy
     # detectors.append(dummy.DummyDetector())
@@ -90,7 +94,6 @@ def detect(opt):
     if source_type == "webcam":
         cap = camera.CameraCtl(source, camera_res, 30, opt.gain, opt.exposure)
 
-    cond = threading.Condition()
     lumine_table = None
     if opt.nt:
         # Don't import if the option is false to avoid needing this dep for development.
@@ -135,26 +138,20 @@ def detect(opt):
             with_boxes = draw.draw(frame, all_dets)
             # with_boxes = draw.draw_sort(frame, trackers)
 
+            t_end = time.time()
+
             if opt.draw:
-                if opt.heatmap:
-                    im = cv2.cvtColor(with_boxes, cv2.COLOR_BGR2GRAY)
-                    im = cv2.equalizeHist(im)
-                    im = cv2.applyColorMap(im, cv2.COLORMAP_PLASMA)
-                    cv2.imshow("detector", im)
-                else:
-                    cv2.imshow("detector", with_boxes)
+                cv2.imshow("detector", with_boxes)
 
             if opt.stream:
                 stream.write_frame(with_boxes)
 
-            # Updated network tables if it was enabled..
+            # Update network tables if it was enabled.
             if lumine_table is not None:
                 y_res = executor.submit(lumine_table.update_yolo, all_dets)
                 a_res = executor.submit(lumine_table.update_apriltags_rpy, all_dets)
                 a_res.result()
                 y_res.result()
-
-            t_end = time.time()
 
             # Print out the formatted ASCII table if it was requested.
             if opt.table:
@@ -173,6 +170,11 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Import arguments for basic operation.
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Config file path. If config is passed, all CLI arguments are ignored! Config file is a json with keys that are the same as CLI argument names.",
+    )
     parser.add_argument(
         "--source",
         type=str,
@@ -205,7 +207,7 @@ def main():
         help="Port to start cscore on.",
     )
 
-    # Secondary arguments concered with tuning.
+    # Secondary arguments concered with camera tuning.
     parser.add_argument(
         "--gain", type=int, default=150, help="Gain to configure with v4l2-ctl"
     )
@@ -245,13 +247,16 @@ def main():
         default=0.50,
         help="Confidence threshold for processing a detect.",
     )
-    parser.add_argument(
-        "--heatmap",
-        action="store_true",
-        help="Draw the display like a heatmap. For looks only.",
-    )
 
     opt = parser.parse_args()
+
+    if opt.config is not None:
+        with open(opt.config, "r") as f:
+            config = json.load(f)
+
+        opt = ConfigOpts()
+        for k in config.keys():
+            setattr(opt, k, config[k])
 
     detect(opt)
     print("Detector exited.")

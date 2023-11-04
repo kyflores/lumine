@@ -20,7 +20,10 @@ class CsCoreStream:
         assert len(shape) == 2
         print("Setting up Cscore")
 
-        ip = get_ip_of_interface(iface)
+        try:
+            ip = get_ip_of_interface(iface)
+        except KeyError:
+            ip = "127.0.0.1"
         self.rows, self.cols = shape
         self.src = cscore.CvSource(
             "lumine_src", cscore.VideoMode.PixelFormat.kMJPEG, self.cols, self.rows, fps

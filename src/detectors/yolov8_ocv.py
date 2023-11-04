@@ -14,9 +14,9 @@ import detectors.yolo_common as yc
 # Baseline CPU performance isn't great, so recommended to use this only as
 # a testing aid. The CPU backend doesn't seem SMT aware as it still maxes out
 # the logical cores.
-class YoloV5OpenCVDetector:
+class YoloV8OpenCVDetector:
     def __init__(
-        self, weights="yolov5s.onnx", classes=yc.YOLOV5_CLASSES, backend="cpu"
+        self, weights="yolov8n.onnx", classes=yc.YOLOV5_CLASSES, backend="cpu"
     ):
         self.classes = classes
         self.net = cv2.dnn.readNet(weights)
@@ -54,7 +54,7 @@ class YoloV5OpenCVDetector:
 
         self.net.setInput(blob)
         outs = self.net.forward(self.out_names)
-        (nms_res, boxes, confidences, class_ids) = yc.process_yolo_output_tensor(
+        (nms_res, boxes, confidences, class_ids) = yc.process_yolov8_output_tensor(
             outs[0]
         )
         res = []
@@ -67,7 +67,7 @@ class YoloV5OpenCVDetector:
 
             res.append(
                 {
-                    "type": "yolov5",
+                    "type": "yolov8",
                     "id": classnm,
                     "color": (0, 255, 0),
                     "corners": corners * self.scale,

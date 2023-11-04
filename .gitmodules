@@ -1,6 +1,3 @@
-[submodule "src/subprojects/yolov5"]
-	path = src/subprojects/yolov5
-	url = https://github.com/ultralytics/yolov5
 [submodule "src/subprojects/sort"]
 	path = src/subprojects/sort
 	url = git@github.com:kyflores/sort.git

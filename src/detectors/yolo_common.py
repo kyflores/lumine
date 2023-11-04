@@ -116,7 +116,7 @@ def resize_to_frame(imraw, dim=640):
     return img, outscale
 
 
-def process_yolo_output_tensor(tensor):
+def process_yolov5_output_tensor(tensor):
     tensor = tensor.squeeze()
 
     best_score = np.max(tensor[:, 5:], axis=1)

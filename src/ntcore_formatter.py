@@ -81,7 +81,7 @@ class NtcoreFormatter:
         ymax = []
         confidence = []  # float 0 < x < 1
         for d in detlist:
-            if d["type"] == "yolov5":
+            if d["type"] == "yolov8":
                 corners = d["corners"]
                 assert corners.shape == (4, 2)
                 (x0, y0, w, h) = cv2.boundingRect(corners.astype(int))

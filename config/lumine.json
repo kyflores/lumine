@@ -1,0 +1,17 @@
+{
+    "weights": "yolov5su.onnx",
+    "source": 0,
+    "stream": 5800,
+    "nt": "127.0.0.1",
+    "iface": "eno2",
+    "gain": 200,
+    "exposure": 200,
+    "tag_family": "tag36h11",
+    "tag_size": 1.0,
+    "max_age": 30,
+    "min_hits": 1,
+    "iou_thresh": 0.15,
+    "conf_thresh": 0.5,
+    "draw": true,
+    "table": true
+}
