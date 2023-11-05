@@ -1,5 +1,7 @@
 {
-    "weights": "yolov5su.onnx",
+    "yolov8_det": "tvm",
+    "yolov8_dim": 640,
+    "weights": "yolov8n.onnx",
     "source": 0,
     "stream": 5800,
     "nt": "127.0.0.1",

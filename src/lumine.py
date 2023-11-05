@@ -47,7 +47,7 @@ def get_detectors(opt):
         from detectors import yolov8_ocv as yolo_ocv
 
         detectors.append(yolo_ocv.YoloV8OpenCVDetector(opt.weights, dim=opt.yolov8_dim))
-    elif opt.yolov8_det == 'tvm_vk':
+    elif opt.yolov8_det == 'tvm':
         print("Using TVM Vulkan YoloV8")
         from detectors import yolov8_tvm
         if os.path.exists('tune.jsonl'):
@@ -259,7 +259,7 @@ def main():
     parser.add_argument(
         "--yolov8_det",
         type=str,
-        choices=['ultralytics, openvino, opencv, tvm_vk'],
+        choices=['ultralytics, openvino, opencv, tvm'],
         default='ultralytics',
         help="Backend to use for running yolov8 models."
     )
