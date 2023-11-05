@@ -24,6 +24,8 @@ class YoloV8TvmDetector:
         self.input_tensor_name = input_tensor_name
         self.shape_dict = {self.input_tensor_name: (1, 3, dim, dim)}
         self.onnx_model = onnx.load(onnx_file)
+        self.output_shape = [d.dim_value for d in self.onnx_model.graph.output[0].type.tensor_type.shape.dim]
+
         self.scale = 1.0
         self.dim = dim
         self.target = target
@@ -72,7 +74,7 @@ class YoloV8TvmDetector:
         t_b = time.time()
         self.module.run()
 
-        result_tensor = self.module.get_output(0, tvm.nd.empty((1, 84, 8400))).numpy()
+        result_tensor = self.module.get_output(0, tvm.nd.empty(self.output_shape)).numpy()
         t_e = time.time()
         print("module.run:", t_e - t_b)
 

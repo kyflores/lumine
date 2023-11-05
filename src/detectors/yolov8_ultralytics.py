@@ -10,13 +10,14 @@ import detectors.yolo_common as yc
 
 
 class YoloUltralyticsDetector:
-    def __init__(self, weights="yolov8n.pt", classes=yc.YOLOV5_CLASSES):
+    def __init__(self, weights="yolov8n.pt", dim=640, classes=yc.YOLOV5_CLASSES):
         self.classes = classes
         self.det = YOLO(weights)
+        self.dim = dim
 
     def detect(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = self.det([img])[
+        results = self.det.predict([img], imgsz=self.dim)[
             0
         ]  # Returns as a list b/c this supports model input images at once
         res = []

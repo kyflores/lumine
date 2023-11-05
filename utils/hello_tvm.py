@@ -11,7 +11,7 @@ from tvm.driver import tvmc
 
 model = tvmc.load("yolov8n.onnx")
 
-tune = "tune.json"
+tune = "tune.jsonl"
 target = "vulkan"
 # target = "vulkan -supports_float16=true"
 

@@ -16,8 +16,9 @@ import detectors.yolo_common as yc
 # the logical cores.
 class YoloV8OpenCVDetector:
     def __init__(
-        self, weights="yolov8n.onnx", classes=yc.YOLOV5_CLASSES, backend="cpu"
+        self, weights="yolov8n.onnx", dim=640, classes=yc.YOLOV5_CLASSES, backend="cpu"
     ):
+        self.dim = dim
         self.classes = classes
         self.net = cv2.dnn.readNet(weights)
         self.scale = 1.0
@@ -41,7 +42,7 @@ class YoloV8OpenCVDetector:
         self.out_names = self.net.getUnconnectedOutLayersNames()
 
     def detect(self, img):
-        img, self.scale = yc.resize_to_frame(img)
+        img, self.scale = yc.resize_to_frame(img, self.dim)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         blob = cv2.dnn.blobFromImage(
             img,

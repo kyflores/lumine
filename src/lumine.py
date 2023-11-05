@@ -30,33 +30,36 @@ def get_detectors(opt):
         atg.RobotpyAprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     )
 
-    from detectors import yolov8_ocv as yolo_ocv
+    if opt.yolov8_det == 'ultralytics':
+        print("Using Ultralytics YoloV8")
+        from detectors import yolov8_ultralytics as yolo
 
-    detectors.append(yolo_ocv.YoloV8OpenCVDetector(opt.weights))
+        detectors.append(yolo.YoloUltralyticsDetector(opt.weights, dim=opt.yolov8_dim))
+    elif opt.yolov8_det == 'openvino':
+        print("Using OpenVINO YoloV8")
+        from detectors import yolov8_openvino as yolov8_ov
 
-    from detectors import yolov8_ultralytics as yolo
-
-    detectors.append(yolo.YoloUltralyticsDetector(opt.weights))
-
-    # from detectors import yolov5_openvino as yolo_ov
-
-    # detectors.append(
-    #     yolo_ov.YoloV5OpenVinoDetector(opt.weights, backend="AUTO", dim=320)
-    # )
-
-    # from detectors import yolov8_openvino as yolov8_ov
-
-    # detectors.append(
-    #     yolov8_ov.YoloV8OpenVinoDetector(opt.weights, backend="AUTO", dim=640)
-    # )
-
-    from detectors import yolov8_tvm
-
-    detectors.append(
-        yolov8_tvm.YoloV8TvmDetector(
-            opt.weights, target="vulkan", tuning_file=None, dim=640
+        detectors.append(
+            yolov8_ov.YoloV8OpenVinoDetector(opt.weights, backend="AUTO", dim=opt.yolov8_dim)
         )
-    )
+    elif opt.yolov8_det == 'opencv':
+        print("Using OpenCVDNN YoloV8")
+        from detectors import yolov8_ocv as yolo_ocv
+
+        detectors.append(yolo_ocv.YoloV8OpenCVDetector(opt.weights, dim=opt.yolov8_dim))
+    elif opt.yolov8_det == 'tvm_vk':
+        print("Using TVM Vulkan YoloV8")
+        from detectors import yolov8_tvm
+        if os.path.exists('tune.jsonl'):
+            tune = 'tune.jsonl'
+        else:
+            tune = None
+
+        detectors.append(
+            yolov8_tvm.YoloV8TvmDetector(
+                opt.weights, target="vulkan", tuning_file=tune, dim=opt.yolov8_dim
+            )
+        )
 
     # from detectors import dummy
     # detectors.append(dummy.DummyDetector())
@@ -246,6 +249,19 @@ def main():
         type=float,
         default=0.50,
         help="Confidence threshold for processing a detect.",
+    )
+    parser.add_argument(
+        "--yolov_dim",
+        type=int,
+        default=640,
+        help="imgsz of the yolov8 model",
+    )
+    parser.add_argument(
+        "--yolov8_det",
+        type=str,
+        choices=['ultralytics, openvino, opencv, tvm_vk'],
+        default='ultralytics',
+        help="Backend to use for running yolov8 models."
     )
 
     opt = parser.parse_args()

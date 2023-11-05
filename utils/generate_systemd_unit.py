@@ -13,7 +13,6 @@ Description=Lumine Inference Service
 Type=simple
 StandardOutput=null
 ExecStart=bash {lumine_root}/start.sh
-EnvironmentFile={lumine_root}/config/lumine.conf
 
 [Install]
 WantedBy=multi-user.target
