@@ -1,7 +1,7 @@
 # Installation script for Lumine.
 # This script assumes an Ubuntu 22.04 system.
 
-sudo apt install -y python3-virtualenv v4l-utils
+sudo apt install -y python3-virtualenv v4l-utils ninja-build cmake build-essential
     # qt5dxcb-plugin
     # python3-opencv
 
