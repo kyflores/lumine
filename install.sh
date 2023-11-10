@@ -1,11 +1,9 @@
+#!/bin/bash
 # Installation script for Lumine.
 # This script assumes an Ubuntu 22.04 system.
 
 sudo apt install -y python3-virtualenv v4l-utils ninja-build cmake build-essential
-    # qt5dxcb-plugin
-    # python3-opencv
-
-# TODO would be required for appsrc streamer.
+# If using gstreamer:
 # sudo apt install -y \
 #     python3-gst-1.0  \
 #     python3-gi \
@@ -28,7 +26,7 @@ fi
 echo "Created venv"
 
 export MAKEFLAGS="-j$(nproc)"
-# pip install numpy  # numpy as to already be installed when trying to install lap.
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements_yolov8.txt
 
 # Build TVM

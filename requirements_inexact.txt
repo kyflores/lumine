@@ -1,0 +1,16 @@
+# Package names without pinned versions for upgrading
+ultralytics
+onnx
+numpy
+filterpy
+lapx
+torch
+torchvision
+robotpy[all]
+pynetworktables
+xgboost
+PyYAML
+opencv-python
+openvino
+openvino-dev
+prettytable
