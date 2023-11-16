@@ -168,6 +168,32 @@ def process_yolov8_output_tensor(tensor):
     )
 
 
+def preprocess_img(np_img):
+    img = np_img / np_img.ma
+
+
+def boxes_to_detection_dict(nms, dim, scale):
+    (nms_res, boxes, confidences, class_ids) = nms
+    res = []
+    for idx in nms_res:
+        conf = confidences[idx]
+        classnm = class_ids[idx]
+        x, y, w, h = np.clip(boxes[idx], 0, dim).astype(np.uint32)
+        d = (x, y, x + w, y + h)  # xyxy format
+        corners = np.array(((d[0], d[1]), (d[0], d[3]), (d[2], d[3]), (d[2], d[1])))
+
+        res.append(
+            {
+                "type": "yolov8",
+                "id": classnm,
+                "color": (0, 0, 255),
+                "corners": corners * scale,
+                "confidence": conf,
+            }
+        )
+    return res
+
+
 # From ultrlytics/yolov5/utils/augmentations
 def letterbox(
     im,

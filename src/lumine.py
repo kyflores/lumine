@@ -30,28 +30,36 @@ def get_detectors(opt):
         atg.RobotpyAprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     )
 
-    if opt.yolov8_det == 'ultralytics':
+    if opt.yolov8_det == "ultralytics":
         print("Using Ultralytics YoloV8")
         from detectors import yolov8_ultralytics as yolo
 
         detectors.append(yolo.YoloUltralyticsDetector(opt.weights, dim=opt.yolov8_dim))
-    elif opt.yolov8_det == 'openvino':
+    elif opt.yolov8_det == "openvino":
         print("Using OpenVINO YoloV8")
         from detectors import yolov8_openvino as yolov8_ov
 
         detectors.append(
-            yolov8_ov.YoloV8OpenVinoDetector(opt.weights, backend="AUTO", dim=opt.yolov8_dim)
+            yolov8_ov.YoloV8OpenVinoDetector(
+                opt.weights, backend="AUTO", dim=opt.yolov8_dim
+            )
         )
-    elif opt.yolov8_det == 'opencv':
+    elif opt.yolov8_det == "opencv":
         print("Using OpenCVDNN YoloV8")
         from detectors import yolov8_ocv as yolo_ocv
 
         detectors.append(yolo_ocv.YoloV8OpenCVDetector(opt.weights, dim=opt.yolov8_dim))
-    elif opt.yolov8_det == 'tvm':
+    elif opt.yolov8_det == "deepsparse":
+        print("Using Deep Sparse YoloV8")
+        from detectors import yolov8_deepsparse as yolo_deepsparse
+
+        detectors.append(yolo_deepsparse.YoloV8DeepsparseDetector(dim=opt.yolov8_dim))
+    elif opt.yolov8_det == "tvm":
         print("Using TVM Vulkan YoloV8")
         from detectors import yolov8_tvm
-        if os.path.exists('tune.jsonl'):
-            tune = 'tune.jsonl'
+
+        if os.path.exists("tune.jsonl"):
+            tune = "tune.jsonl"
         else:
             tune = None
 
@@ -251,7 +259,7 @@ def main():
         help="Confidence threshold for processing a detect.",
     )
     parser.add_argument(
-        "--yolov_dim",
+        "--yolov8_dim",
         type=int,
         default=640,
         help="imgsz of the yolov8 model",
@@ -259,9 +267,9 @@ def main():
     parser.add_argument(
         "--yolov8_det",
         type=str,
-        choices=['ultralytics, openvino, opencv, tvm'],
-        default='ultralytics',
-        help="Backend to use for running yolov8 models."
+        choices=["ultralytics", "openvino", "opencv", "tvm", "deepsparse"],
+        default="ultralytics",
+        help="Backend to use for running yolov8 models.",
     )
 
     opt = parser.parse_args()

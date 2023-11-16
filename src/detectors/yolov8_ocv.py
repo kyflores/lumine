@@ -43,36 +43,16 @@ class YoloV8OpenCVDetector:
 
     def detect(self, img):
         img, self.scale = yc.resize_to_frame(img, self.dim)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         blob = cv2.dnn.blobFromImage(
             img,
             1.0 / 255,
             size=(img.shape[1], img.shape[0]),
             mean=(0.0, 0.0, 0.0),
-            swapRB=False,
+            swapRB=True,
             crop=False,
         )
 
         self.net.setInput(blob)
         outs = self.net.forward(self.out_names)
-        (nms_res, boxes, confidences, class_ids) = yc.process_yolov8_output_tensor(
-            outs[0]
-        )
-        res = []
-        for idx in nms_res:
-            conf = confidences[idx]
-            classnm = class_ids[idx]
-            x, y, w, h = np.clip(boxes[idx], 0, 640).astype(np.uint32)
-            d = (x, y, x + w, y + h)  # xyxy format
-            corners = np.array(((d[0], d[1]), (d[0], d[3]), (d[2], d[3]), (d[2], d[1])))
-
-            res.append(
-                {
-                    "type": "yolov8",
-                    "id": classnm,
-                    "color": (0, 255, 0),
-                    "corners": corners * self.scale,
-                    "confidence": conf,
-                }
-            )
-        return res
+        nms = yc.process_yolov8_output_tensor(outs[0])
+        return yc.boxes_to_detection_dict(nms, self.dim, self.scale)

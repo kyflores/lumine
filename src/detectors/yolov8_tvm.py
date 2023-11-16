@@ -24,7 +24,10 @@ class YoloV8TvmDetector:
         self.input_tensor_name = input_tensor_name
         self.shape_dict = {self.input_tensor_name: (1, 3, dim, dim)}
         self.onnx_model = onnx.load(onnx_file)
-        self.output_shape = [d.dim_value for d in self.onnx_model.graph.output[0].type.tensor_type.shape.dim]
+        self.output_shape = [
+            d.dim_value
+            for d in self.onnx_model.graph.output[0].type.tensor_type.shape.dim
+        ]
 
         self.scale = 1.0
         self.dim = dim
@@ -61,42 +64,24 @@ class YoloV8TvmDetector:
 
     def detect(self, im):
         im, self.scale = yc.resize_to_frame(im, self.dim)
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         blob = cv2.dnn.blobFromImage(
             im,
             1.0 / 255,
             size=(im.shape[1], im.shape[0]),
             mean=(0.0, 0.0, 0.0),
-            swapRB=False,
+            swapRB=True,
             crop=False,
         )
+        print(blob.shape, blob.max(), blob.min())
         self.module.set_input(self.input_tensor_name, blob)
         t_b = time.time()
         self.module.run()
 
-        result_tensor = self.module.get_output(0, tvm.nd.empty(self.output_shape)).numpy()
+        result_tensor = self.module.get_output(
+            0, tvm.nd.empty(self.output_shape)
+        ).numpy()
         t_e = time.time()
         print("module.run:", t_e - t_b)
 
-        (nms_res, boxes, confidences, class_ids) = yc.process_yolov8_output_tensor(
-            result_tensor
-        )
-
-        res = []
-        for idx in nms_res:
-            conf = confidences[idx]
-            classnm = class_ids[idx]
-            x, y, w, h = np.clip(boxes[idx], 0, self.dim).astype(np.uint32)
-            d = (x, y, x + w, y + h)  # xyxy format
-            corners = np.array(((d[0], d[1]), (d[0], d[3]), (d[2], d[3]), (d[2], d[1])))
-
-            res.append(
-                {
-                    "type": "yolov8",
-                    "id": classnm,
-                    "color": (0, 0, 255),
-                    "corners": corners * self.scale,
-                    "confidence": conf,
-                }
-            )
-        return res
+        nms = yc.process_yolov8_output_tensor(result_tensor)
+        return yc.boxes_to_detection_dict(nms, self.dim, self.scale)
