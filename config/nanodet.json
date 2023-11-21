@@ -1,8 +1,8 @@
 {
-    "det": "yolov8_tvm",
-    "dim": 640,
+    "det": "nanodet_openvino",
+    "dim": 416,
     "tvm": "vulkan -from_device=0",
-    "weights": "yolov8n.onnx",
+    "weights": "nanodet/",
     "source": 0,
     "stream": 5800,
     "nt": "127.0.0.1",

@@ -30,31 +30,29 @@ def get_detectors(opt):
         atg.RobotpyAprilTagDetector(atg.C310_PARAMS, opt.tag_family, opt.tag_size)
     )
 
-    if opt.yolov8_det == "ultralytics":
+    if opt.det == "yolov8_ultralytics":
         print("Using Ultralytics YoloV8")
         from detectors import yolov8_ultralytics as yolo
 
-        detectors.append(yolo.YoloUltralyticsDetector(opt.weights, dim=opt.yolov8_dim))
-    elif opt.yolov8_det == "openvino":
+        detectors.append(yolo.YoloUltralyticsDetector(opt.weights, dim=opt.dim))
+    elif opt.det == "yolov8_openvino":
         print("Using OpenVINO YoloV8")
         from detectors import yolov8_openvino as yolov8_ov
 
         detectors.append(
-            yolov8_ov.YoloV8OpenVinoDetector(
-                opt.weights, backend="AUTO", dim=opt.yolov8_dim
-            )
+            yolov8_ov.YoloV8OpenVinoDetector(opt.weights, backend="AUTO", dim=opt.dim)
         )
-    elif opt.yolov8_det == "opencv":
+    elif opt.det == "yolov8_opencv":
         print("Using OpenCVDNN YoloV8")
         from detectors import yolov8_ocv as yolo_ocv
 
-        detectors.append(yolo_ocv.YoloV8OpenCVDetector(opt.weights, dim=opt.yolov8_dim))
-    elif opt.yolov8_det == "deepsparse":
+        detectors.append(yolo_ocv.YoloV8OpenCVDetector(opt.weights, dim=opt.dim))
+    elif opt.det == "yolov8_deepsparse":
         print("Using Deep Sparse YoloV8")
         from detectors import yolov8_deepsparse as yolo_deepsparse
 
-        detectors.append(yolo_deepsparse.YoloV8DeepsparseDetector(dim=opt.yolov8_dim))
-    elif opt.yolov8_det == "tvm":
+        detectors.append(yolo_deepsparse.YoloV8DeepsparseDetector(dim=opt.dim))
+    elif opt.det == "yolov8_tvm":
         print("Using TVM Vulkan YoloV8")
         from detectors import yolov8_tvm
 
@@ -65,9 +63,21 @@ def get_detectors(opt):
 
         detectors.append(
             yolov8_tvm.YoloV8TvmDetector(
-                opt.weights, target="vulkan", tuning_file=tune, dim=opt.yolov8_dim
+                opt.weights, target="vulkan", tuning_file=tune, dim=opt.dim
             )
         )
+    elif opt.det == "nanodet_openvino":
+        import detectors.nanodet_openvino as ndet_ov
+
+        detectors.append(ndet_ov.NanodetOpenVinoDetector(opt.weights))
+
+    elif opt.det == "nanodet_tvm":
+        import detectors.nanodet_tvm as ndet_tvm
+
+        detectors.append(ndet_tvm.NanodetTvmDetector(opt.weights, target="llvm"))
+
+    else:
+        raise Exception("Unknown detector; should be unreachable")
 
     # from detectors import dummy
     # detectors.append(dummy.DummyDetector())
@@ -196,6 +206,9 @@ def main():
         "--weights", type=str, default="yolov5s.pt", help="Path to YOLO weights file"
     )
     parser.add_argument(
+        "--tvm_target", type=str, default="vulkan -from_device=0", help="TVM Target string"
+    )
+    parser.add_argument(
         "--table", action="store_true", help="Print the detection table."
     )
     parser.add_argument(
@@ -259,15 +272,23 @@ def main():
         help="Confidence threshold for processing a detect.",
     )
     parser.add_argument(
-        "--yolov8_dim",
+        "--dim",
         type=int,
         default=640,
         help="imgsz of the yolov8 model",
     )
     parser.add_argument(
-        "--yolov8_det",
+        "--det",
         type=str,
-        choices=["ultralytics", "openvino", "opencv", "tvm", "deepsparse"],
+        choices=[
+            "yolov8_ultralytics",
+            "yolov8_openvino",
+            "yolov8_opencv",
+            "yolov8_tvm",
+            "yolov8_deepsparse",
+            "nanodet_openvino",
+            "nanodet_tvm",
+        ],
         default="ultralytics",
         help="Backend to use for running yolov8 models.",
     )

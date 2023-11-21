@@ -27,7 +27,7 @@ echo "Created venv"
 
 export MAKEFLAGS="-j$(nproc)"
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements_yolov8.txt
+pip install -r requirements_inexact.txt
 
 # Build TVM
 bash utils/tvmbuild.sh

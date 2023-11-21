@@ -110,7 +110,7 @@ To get the model into float16 format:
 python export.py --weights /path/to/your/weights.pt --include onnx --opset 12
 
 # mo is installed with the openvino-dev package.
-mo --input_model /path/to/your/weights.onnx --data_type FP16
+mo --input_model /path/to/your/weights.onnx --compress_to_fp16 True
 ```
 
 OpenVINO produces a `.xml, .bin, and .mapping` file from your model, which should be put

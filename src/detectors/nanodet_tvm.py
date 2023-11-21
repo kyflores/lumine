@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
-import detectors.nanodet_common as nc
-
 import os
+import detectors.nanodet_common as nc
+import detectors.yolo_common as yc
+
 import tvm.relay as relay
 import tvm
 from tvm import autotvm, auto_scheduler
@@ -11,17 +12,11 @@ import onnx
 import time
 
 
-# https://tvm.apache.org/docs/tutorial/autotvm_relay_x86.html#sphx-glr-tutorial-autotvm-relay-x86-py
-# https://github.com/tlc-pack/TLCBench/blob/main/benchmark_autoscheduler.py
-class YoloV8TvmDetector:
-    def __init__(
-        self,
-        onnx_file,
-        input_tensor_name="images",
-        target="llvm",
-        tuning_file="tune.json",
-        dim=640,
-    ):
+# nanodet.onnx from nanodet-plus-m_416
+# Input: data (1, 3, 416, 416)
+# Output output (1, 3598, 112) for COCO 80 classes
+class NanodetTvmDetector:
+    def __init__(self, onnx_file, input_tensor_name="data", target="llvm", tuning_file="tune.jsonl", dim=416):
         self.input_tensor_name = input_tensor_name
         self.shape_dict = {self.input_tensor_name: (1, 3, dim, dim)}
         self.onnx_model = onnx.load(onnx_file)
@@ -59,21 +54,23 @@ class YoloV8TvmDetector:
         elif self.target.startswith("opencl"):
             device_name = "cl"
         elif self.target.startswith("llvm"):
-            device_name = "llvm"
+            device_name = "cpu"
         self.device = tvm.device(device_name, 0)
         self.module = graph_executor.GraphModule(self.lib["default"](self.device))
+
+        self.grid = nc.generate_grid_center_priors(dim, dim)
 
     def detect(self, im):
         im, self.scale = yc.resize_to_frame(im, self.dim)
         blob = cv2.dnn.blobFromImage(
             im,
-            1.0 / 255,
+            1.0 / 57.63,
             size=(im.shape[1], im.shape[0]),
-            mean=(0.0, 0.0, 0.0),
+            mean=(103.53, 116.28, 123.675),
             swapRB=True,
             crop=False,
         )
-        print(blob.shape, blob.max(), blob.min())
+
         self.module.set_input(self.input_tensor_name, blob)
         t_b = time.time()
         self.module.run()
@@ -84,5 +81,6 @@ class YoloV8TvmDetector:
         t_e = time.time()
         print("module.run:", t_e - t_b)
 
-        nms = yc.process_yolov8_output_tensor(result_tensor)
+        nms = nc.decode_infer(self.dim, self.dim, result_tensor, self.grid, 0.25)
+
         return yc.boxes_to_detection_dict(nms, self.dim, self.scale)
