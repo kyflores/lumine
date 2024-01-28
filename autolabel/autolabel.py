@@ -1,4 +1,4 @@
-# Use a yolov5 network to label a dataset dump it to the yolo format.
+# Use OWLViT to label a dataset and dump it to the yolo format.
 # The output directory is formatted to match the "YOLO 1.1" format that
 # CVAT expects, and becomes an image sequence rather than a video dataset
 
@@ -15,44 +15,14 @@ import numpy as np
 import cv2
 import torch
 
+from transformers import OwlViTProcessor, OwlViTForObjectDetection
+# from transformers import Owlv2Processor, Owlv2ForObjectDetection
+from transformers.image_utils import ImageFeatureExtractionMixin
+
 import argparse
 import shutil
 
-YOLOV5_PATH = os.path.dirname(__file__) + "/../src/subprojects/yolov5/"
-
-
-class YoloV5Wrapper:
-    def __init__(self, weights="yolov5s.pt"):
-        self.model = torch.hub.load(YOLOV5_PATH, "custom", weights, source="local")
-        self.classes = self.model.names
-
-    def metadata(self):
-        idxs = list(
-            self.classes.items()
-        )  # Returns like (0, person), (1, bicycle), but maybe not in order
-        idxs.sort(key=lambda x: x[0])
-        class_names = [x[1] for x in idxs]
-
-        return len(class_names), class_names
-
-    def detect(self, img, min_conf=0.4):
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        detects = self.model.forward(img).xywh[0].cpu().numpy()
-        res = []
-
-        height, width, channel = img.shape
-
-        for d in detects:
-            x, y, w, h, conf, classnm = d[:6]
-
-            x = x / width
-            y = y / height
-            w = w / width
-            h = h / height
-
-            res.append((int(classnm), x, y, w, h))
-
-        return res
+# Based on https://github.com/huggingface/notebooks/blob/main/examples/zeroshot_object_detection_with_owlvit.ipynb
 
 
 class DatasetWriter:
@@ -140,22 +110,58 @@ class VideoLoader:
     def __del__(self):
         self.reader.release()
 
+class OWLViT:
+    def __init__(self, model_name="google/owlvit-base-patch32") -> None:
+        self.model = OwlViTForObjectDetection.from_pretrained(model_name)
+        self.processor = OwlViTProcessor.from_pretrained(model_name)
+        self.mixin = ImageFeatureExtractionMixin()
+
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model.eval()
+        self.model.to(self.device)
+
+    def detect(self, text_queries, image):
+        inputs = self.processor(text=text_queries, images=image, return_tensors="pt").to(self.device)
+        outputs = self.model(**inputs)
+
+        image_size = self.model.config.vision_config.image_size
+        image_tmp = self.mixin.resize(image, image_size)
+        input_image = np.asarray(image_tmp).astype(np.float32) / 255.0
+
+        # Threshold to eliminate low probability predictions
+        score_threshold = 0.1
+
+        # Get prediction logits
+        logits = torch.max(outputs["logits"][0], dim=-1)
+        scores = torch.sigmoid(logits.values).cpu().detach().numpy()
+
+        # Get prediction labels and boundary boxes
+        labels = logits.indices.cpu().detach().numpy()
+        boxes = outputs["pred_boxes"][0].cpu().detach().numpy()
+        for score, box, label in zip(scores, boxes, labels):
+            if score < score_threshold:
+                continue
+
+            cx, cy, w, h = box
+            print(score, box)
+
 
 def main(opt):
-    model = YoloV5Wrapper(weights=opt.weights)
-    writer = DatasetWriter(model)
+    owl = OWLViT()
+    # writer = DatasetWriter(model)
     loader = VideoLoader(opt.video, every_n=opt.decimate)
 
     fr = loader.next()
     while fr is not None:
-        writer.add_frame(fr)
+        # writer.add_frame(fr)
+        owl.detect("orange ring", fr)
         fr = loader.next()
-    writer.cleanup()
+    # writer.cleanup()
 
-    print("Inference is complete, zipping up your dataset...")
-    shutil.make_archive("lumine_autolabel_out", "zip", writer.root)
+    # print("Inference is complete, zipping up your dataset...")
+    # shutil.make_archive("lumine_autolabel_out", "zip", writer.root)
 
-    print("Done! Select YOLO 1.1 as the format when importing into cvat.")
+    # print("Done! Select YOLO 1.1 as the format when importing into cvat.")
     exit(0)
 
 

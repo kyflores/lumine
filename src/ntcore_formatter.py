@@ -70,6 +70,21 @@ class NtcoreFormatter:
 
         return ret
 
+    def update(self, detlist):
+        yolo = []
+        april = []
+        for d in detlist:
+            if "yolo" in d["type"]:
+                yolo.append(d)
+            elif "apriltag" in d["type"]:
+                april.append(d)
+
+        if len(yolo) > 0:
+            self.update_yolo(yolo)
+
+        if len(april) > 0:
+            self.update_apriltags_rpy(april)
+
     # Converts detections from "array of structs" to "struct of arrays"
     def update_yolo(self, detlist):
         ids = []  # int array
@@ -81,21 +96,18 @@ class NtcoreFormatter:
         ymax = []
         confidence = []  # float 0 < x < 1
         for d in detlist:
-            if d["type"] == "yolov8":
-                corners = d["corners"]
-                assert corners.shape == (4, 2)
-                (x0, y0, w, h) = cv2.boundingRect(corners.astype(int))
-                area.append(w * h)
+            corners = d["corners"]
+            assert corners.shape == (4, 2)
+            (x0, y0, w, h) = cv2.boundingRect(corners.astype(int))
+            area.append(w * h)
 
-                ids.append(d["id"])
-                sort_id.append(d.get("sort_id", -1))
-                xmin.append(x0)
-                ymin.append(x0)
-                xmax.append(x0 + w)
-                ymax.append(y0 + h)
-                confidence.append(d["confidence"])
-            else:
-                continue
+            ids.append(d["id"])
+            sort_id.append(d.get("sort_id", -1))
+            xmin.append(x0)
+            ymin.append(x0)
+            xmax.append(x0 + w)
+            ymax.append(y0 + h)
+            confidence.append(d["confidence"])
 
         self.yolopub["len"].set(len(ids))
         self.yolopub["ids"].set(ids)
@@ -125,31 +137,27 @@ class NtcoreFormatter:
         rzs = []
 
         for d in detlist:
-            if d["type"] == "apriltags":
-                corners = d["corners"]
-                assert corners.shape == (4, 2)
-                (x0, y0, w, h) = cv2.boundingRect(corners.astype(int))
-                area.append(w * h)
+            corners = d["corners"]
+            assert corners.shape == (4, 2)
+            (x0, y0, w, h) = cv2.boundingRect(corners.astype(int))
+            area.append(w * h)
 
-                ids.append(d["id"])
-                sort_id.append(d.get("sort_id", -1))
-                xmin.append(x0)
-                ymin.append(x0)
-                xmax.append(x0 + w)
-                ymax.append(y0 + h)
-                confidence.append(d["confidence"])
+            ids.append(d["id"])
+            sort_id.append(d.get("sort_id", -1))
+            xmin.append(x0)
+            ymin.append(x0)
+            xmax.append(x0 + w)
+            ymax.append(y0 + h)
+            confidence.append(d["confidence"])
 
-                tx, ty, tz = d["translation"]
-                rx, ry, rz = d["rotation_euler"]
-                txs.append(tx)
-                tys.append(ty)
-                tzs.append(tz)
-                rxs.append(rx)
-                rys.append(ry)
-                rzs.append(rz)
-
-            else:
-                continue
+            tx, ty, tz = d["translation"]
+            rx, ry, rz = d["rotation_euler"]
+            txs.append(tx)
+            tys.append(ty)
+            tzs.append(tz)
+            rxs.append(rx)
+            rys.append(ry)
+            rzs.append(rz)
 
         self.atagpub["len"].set(len(ids))
         self.atagpub["ids"].set(ids)

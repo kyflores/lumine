@@ -169,10 +169,8 @@ def detect(opt):
 
             # Update network tables if it was enabled.
             if lumine_table is not None:
-                y_res = executor.submit(lumine_table.update_yolo, all_dets)
-                a_res = executor.submit(lumine_table.update_apriltags_rpy, all_dets)
-                a_res.result()
-                y_res.result()
+                res = executor.submit(lumine_table.update, all_dets)
+                res.result()
 
             # Print out the formatted ASCII table if it was requested.
             if opt.table:

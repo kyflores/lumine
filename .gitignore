@@ -135,7 +135,7 @@ dmypy.json
 *.xml
 *.mapping
 
-lumine-venv/
+/lumine-venv/
 lumine.service
 
-tvm/
+/tvm/
